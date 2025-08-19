@@ -61,13 +61,17 @@ def student_detail(student_id):
     goals = Goal.get_by_student(db, student_id)
     recent_trials = TrialLog.get_recent_by_student(db, student_id, limit=10)
     soap_notes = SOAPNote.get_by_student(db, student_id)
+    student_schedule = StudentSchedule.get_by_student(db, student_id)
+    schools = {school.id: school for school in School.get_all(db)}
     
     return render_template('student_detail.html',
                          student=student,
                          sessions=sessions,
                          goals=goals,
                          recent_trials=recent_trials,
-                         soap_notes=soap_notes)
+                         soap_notes=soap_notes
+                         student_schedule=student_schedule,
+                         schools=schools)
 
 @app.route('/students/new', methods=['GET', 'POST'])
 def new_student():
