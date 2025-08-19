@@ -1,299 +1,497 @@
 <!-- templates/student_detail.html - Complete enhanced version -->
-{% extends "base.html" %}
-
-{% block title %}{{ student.display_name }} - Student Details{% endblock %}
-
-{% block content %}
+{% extends "base.html" %} {% block title %}{{ student.display_name }} - Student
+Details{% endblock %} {% block content %}
 <div class="container">
-    <div class="page-header">
-        <h1>{{ student.display_name }}</h1>
-        <p class="text-muted">{{ student.grade_level }}{% if student.pronouns %} • {{ student.pronouns }}{% endif %}</p>
-    </div>
+  <div class="page-header">
+    <h1>{{ student.display_name }}</h1>
+    <p class="text-muted">
+      {{ student.grade_level }}{% if student.pronouns %} • {{ student.pronouns
+      }}{% endif %}
+    </p>
+  </div>
 
-    <!-- Student Info Card -->
-    <div class="card">
-        <h2>Student Information</h2>
-        <div class="grid grid-2">
-            <div>
-                <strong>Full Name:</strong> {{ student.full_name }}<br>
-                {% if student.preferred_name %}
-                    <strong>Preferred Name:</strong> {{ student.preferred_name }}<br>
-                {% endif %}
-                <strong>Grade Level:</strong> {{ student.grade_level }}<br>
-                {% if student.pronouns %}
-                    <strong>Pronouns:</strong> {{ student.pronouns }}<br>
-                {% endif %}
-            </div>
-            <div>
-                {% if student_schedule and schools %}
-                    <strong>School:</strong> {{ schools[student_schedule.school_id].name if student_schedule.school_id in schools else 'Not assigned' }}<br>
-                    <strong>Lunch:</strong> {{ student_schedule.lunch_type }}<br>
-                {% endif %}
-                <strong>Active:</strong> {{ "Yes" if student.active else "No" }}
-            </div>
-        </div>
-        {% if student.notes %}
-            <div style="margin-top: 15px;">
-                <strong>Notes:</strong> {{ student.notes }}
-            </div>
+  <!-- Student Info Card -->
+  <div class="card">
+    <h2>Student Information</h2>
+    <div class="grid grid-2">
+      <div>
+        <strong>Full Name:</strong> {{ student.full_name }}<br />
+        {% if student.preferred_name %}
+        <strong>Preferred Name:</strong> {{ student.preferred_name }}<br />
         {% endif %}
+        <strong>Grade Level:</strong> {{ student.grade_level }}<br />
+        {% if student.pronouns %}
+        <strong>Pronouns:</strong> {{ student.pronouns }}<br />
+        {% endif %}
+      </div>
+      <div>
+        {% if student_schedule and schools %}
+        <strong>School:</strong> {{ schools[student_schedule.school_id].name if
+        student_schedule.school_id in schools else 'Not assigned' }}<br />
+        <strong>Lunch:</strong> {{ student_schedule.lunch_type }}<br />
+        {% endif %}
+        <strong>Active:</strong> {{ "Yes" if student.active else "No" }}
+      </div>
+    </div>
+    {% if student.notes %}
+    <div style="margin-top: 15px">
+      <strong>Notes:</strong> {{ student.notes }}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Goals and Objectives Section (NEW/ENHANCED) -->
+  <div class="card">
+    <div
+      style="
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      "
+    >
+      <h2>Goals & Objectives</h2>
+      <a
+        href="{{ url_for('new_goal', student_id=student.id) }}"
+        class="btn btn-primary"
+        >Add Goal</a
+      >
     </div>
 
-    <!-- Goals and Objectives Section (NEW/ENHANCED) -->
-    <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h2>Goals & Objectives</h2>
-            <a href="{{ url_for('new_goal', student_id=student.id) }}" class="btn btn-primary">Add Goal</a>
+    {% if goals_with_objectives %} {% for goal_data in goals_with_objectives %}
+    <div
+      class="goal-section"
+      style="
+        margin-bottom: 25px;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        overflow: hidden;
+      "
+    >
+      <!-- Goal Header -->
+      <div
+        class="goal-header"
+        style="
+          background: #f8f9fa;
+          padding: 15px;
+          border-bottom: 1px solid #dee2e6;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+          "
+        >
+          <div style="flex: 1">
+            <h3 style="margin: 0 0 5px 0; color: #495057">
+              {{ goal_data.goal.description }}
+            </h3>
+            <div
+              style="
+                display: flex;
+                gap: 20px;
+                font-size: 0.9rem;
+                color: #6c757d;
+              "
+            >
+              <span>Target: {{ goal_data.goal.target_accuracy }}%</span>
+              <span>Current Progress: {{ goal_data.progress }}%</span>
+              <span>{{ goal_data.objectives|length }} objectives</span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px">
+            <a
+              href="{{ url_for('edit_goal', goal_id=goal_data.goal.id) }}"
+              class="btn btn-sm btn-outline"
+              >Edit</a
+            >
+            <a
+              href="{{ url_for('new_objective', goal_id=goal_data.goal.id) }}"
+              class="btn btn-sm btn-outline"
+              >Add Objective</a
+            >
+            <button
+              onclick="deleteGoal({{ goal_data.goal.id }}, '{{ goal_data.goal.description[:50] }}...')"
+              class="btn btn-sm btn-danger"
+            >
+              Delete Goal
+            </button>
+          </div>
         </div>
-        
-        {% if goals_with_objectives %}
-            {% for goal_data in goals_with_objectives %}
-                <div class="goal-section" style="margin-bottom: 25px; border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden;">
-                    <!-- Goal Header -->
-                    <div class="goal-header" style="background: #f8f9fa; padding: 15px; border-bottom: 1px solid #dee2e6;">
-                        <div style="display: flex; justify-content: space-between; align-items: start;">
-                            <div style="flex: 1;">
-                                <h3 style="margin: 0 0 5px 0; color: #495057;">{{ goal_data.goal.description }}</h3>
-                                <div style="display: flex; gap: 20px; font-size: 0.9rem; color: #6c757d;">
-                                    <span>Target: {{ goal_data.goal.target_accuracy }}%</span>
-                                    <span>Current Progress: {{ goal_data.progress }}%</span>
-                                    <span>{{ goal_data.objectives|length }} objectives</span>
-                                </div>
-                            </div>
-                            <div style="display: flex; gap: 8px;">
-                                <a href="{{ url_for('edit_goal', goal_id=goal_data.goal.id) }}" 
-                                   class="btn btn-sm btn-outline">Edit</a>
-                                <a href="{{ url_for('new_objective', goal_id=goal_data.goal.id) }}" 
-                                   class="btn btn-sm btn-outline">Add Objective</a>
-                                <button onclick="deleteGoal({{ goal_data.goal.id }}, '{{ goal_data.goal.description[:50] }}...')" 
-                                        class="btn btn-sm btn-danger">Delete Goal</button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Objectives List -->
-                    <div class="objectives-list" style="padding: 15px;">
-                        {% if goal_data.objectives %}
-                            {% for objective in goal_data.objectives %}
-                                <div class="objective-item" style="padding: 12px; margin-bottom: 10px; background: #ffffff; border: 1px solid #e9ecef; border-radius: 6px;">
-                                    <div style="display: flex; justify-content: space-between; align-items: start;">
-                                        <div style="flex: 1;">
-                                            <h4 style="margin: 0 0 5px 0; font-size: 1rem; color: #343a40;">
-                                                {{ objective.description }}
-                                            </h4>
-                                            <div style="display: flex; gap: 15px; font-size: 0.85rem; color: #6c757d;">
-                                                <span>Target: {{ objective.target_percentage }}%</span>
-                                                <span>Progress: {{ objective.current_progress }}%</span>
-                                            </div>
-                                            {% if objective.notes %}
-                                                <p style="margin: 8px 0 0 0; font-size: 0.85rem; color: #6c757d; font-style: italic;">
-                                                    {{ objective.notes }}
-                                                </p>
-                                            {% endif %}
-                                        </div>
-                                        <div style="display: flex; gap: 5px;">
-                                            <a href="{{ url_for('edit_objective', objective_id=objective.id) }}" 
-                                               class="btn btn-sm btn-outline">Edit</a>
-                                            <button onclick="viewObjectiveProgress({{ objective.id }})" 
-                                                    class="btn btn-sm btn-outline">Progress</button>
-                                            <button onclick="deleteObjective({{ objective.id }}, '{{ objective.description[:30] }}...')" 
-                                                    class="btn btn-sm btn-danger">Delete</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        {% else %}
-                            <p class="text-muted" style="margin: 0;">No objectives yet. <a href="{{ url_for('new_objective', goal_id=goal_data.goal.id) }}">Add the first objective</a></p>
-                        {% endif %}
-                    </div>
-                </div>
-            {% endfor %}
+      </div>
+
+      <!-- Objectives List -->
+      <div class="objectives-list" style="padding: 15px">
+        {% if goal_data.objectives %} {% for objective in goal_data.objectives
+        %}
+        <div
+          class="objective-item"
+          style="
+            padding: 12px;
+            margin-bottom: 10px;
+            background: #ffffff;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+          "
+        >
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: start;
+            "
+          >
+            <div style="flex: 1">
+              <h4 style="margin: 0 0 5px 0; font-size: 1rem; color: #343a40">
+                {{ objective.description }}
+              </h4>
+              <div
+                style="
+                  display: flex;
+                  gap: 15px;
+                  font-size: 0.85rem;
+                  color: #6c757d;
+                "
+              >
+                <span>Target: {{ objective.target_percentage }}%</span>
+                <span>Progress: {{ objective.current_progress }}%</span>
+              </div>
+              {% if objective.notes %}
+              <p
+                style="
+                  margin: 8px 0 0 0;
+                  font-size: 0.85rem;
+                  color: #6c757d;
+                  font-style: italic;
+                "
+              >
+                {{ objective.notes }}
+              </p>
+              {% endif %}
+            </div>
+            <div style="display: flex; gap: 5px">
+              <a
+                href="{{ url_for('edit_objective', objective_id=objective.id) }}"
+                class="btn btn-sm btn-outline"
+                >Edit</a
+              >
+              <button
+                onclick="viewObjectiveProgress({{ objective.id }})"
+                class="btn btn-sm btn-outline"
+              >
+                Progress
+              </button>
+              <button
+                onclick="deleteObjective({{ objective.id }}, '{{ objective.description[:30] }}...')"
+                class="btn btn-sm btn-danger"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+        {% endfor %} {% else %}
+        <p class="text-muted" style="margin: 0">
+          No objectives yet.
+          <a href="{{ url_for('new_objective', goal_id=goal_data.goal.id) }}"
+            >Add the first objective</a
+          >
+        </p>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %} {% else %}
+    <div class="text-center" style="padding: 40px">
+      <p class="text-muted">No goals set yet.</p>
+      <a
+        href="{{ url_for('new_goal', student_id=student.id) }}"
+        class="btn btn-primary"
+        >Add First Goal</a
+      >
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Recent Sessions Section -->
+  <div class="card">
+    <div
+      style="
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+      "
+    >
+      <h2>Recent Sessions</h2>
+      <a
+        href="{{ url_for('new_session') }}?student_id={{ student.id }}"
+        class="btn btn-primary"
+        >Schedule Session</a
+      >
+    </div>
+
+    {% if sessions %}
+    <div class="sessions-list">
+      {% for session in sessions[:5] %}
+      <div
+        class="session-item"
+        style="
+          padding: 12px;
+          margin-bottom: 8px;
+          background: #f8f9fa;
+          border-radius: 6px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        "
+      >
+        <div>
+          <strong>{{ session.session_date }}</strong>
+          <span class="text-muted">• {{ session.session_type }}</span>
+          {% if session.status != 'Completed' %}
+          <span
+            class="badge badge-{{ 'warning' if session.status == 'Scheduled' else 'danger' }}"
+          >
+            {{ session.status }}
+          </span>
+          {% endif %} {% if session.start_time and session.end_time %}
+          <span class="text-muted"
+            >• {{ session.start_time }} - {{ session.end_time }}</span
+          >
+          {% endif %}
+        </div>
+        <a
+          href="{{ url_for('session_detail', session_id=session.id) }}"
+          class="btn btn-sm btn-outline"
+          >View</a
+        >
+      </div>
+      {% endfor %}
+    </div>
+    {% if sessions|length > 5 %}
+    <p class="text-muted">
+      Showing 5 most recent sessions.
+      <a href="{{ url_for('sessions') }}?student={{ student.id }}"
+        >View all sessions</a
+      >
+    </p>
+    {% endif %} {% else %}
+    <p class="text-muted">No sessions recorded yet.</p>
+    {% endif %}
+  </div>
+
+  <!-- Recent Trial Data Section -->
+  {% if recent_trials %}
+  <div class="card">
+    <h2>Recent Trial Data</h2>
+    <div class="trials-list">
+      {% for trial in recent_trials %}
+      <div
+        class="trial-item"
+        style="
+          padding: 10px;
+          margin-bottom: 8px;
+          background: #f8f9fa;
+          border-radius: 4px;
+        "
+      >
+        {% if trial.objective_id %}
+        <strong
+          >{{ trial.objective_description if trial.objective_description else
+          'Unknown Objective' }}</strong
+        >
         {% else %}
-            <div class="text-center" style="padding: 40px;">
-                <p class="text-muted">No goals set yet.</p>
-                <a href="{{ url_for('new_goal', student_id=student.id) }}" class="btn btn-primary">Add First Goal</a>
-            </div>
+        <strong>Trial Data</strong>
         {% endif %}
-    </div>
-
-    <!-- Recent Sessions Section -->
-    <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <h2>Recent Sessions</h2>
-            <a href="{{ url_for('new_session') }}?student_id={{ student.id }}" class="btn btn-primary">Schedule Session</a>
+        <span class="text-muted"
+          >• {{ trial.independence_percentage }}% independent ({{
+          trial.total_trials }} trials)</span
+        >
+        <div style="font-size: 0.85rem; color: #6c757d; margin-top: 4px">
+          Independent: {{ trial.independent }} • Minimal: {{
+          trial.minimal_support }} • Moderate: {{ trial.moderate_support }} •
+          Maximal: {{ trial.maximal_support }} • Incorrect: {{ trial.incorrect
+          }}
         </div>
-        
-        {% if sessions %}
-            <div class="sessions-list">
-                {% for session in sessions[:5] %}
-                    <div class="session-item" style="padding: 12px; margin-bottom: 8px; background: #f8f9fa; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <strong>{{ session.session_date }}</strong>
-                            <span class="text-muted">• {{ session.session_type }}</span>
-                            {% if session.status != 'Completed' %}
-                                <span class="badge badge-{{ 'warning' if session.status == 'Scheduled' else 'danger' }}">
-                                    {{ session.status }}
-                                </span>
-                            {% endif %}
-                            {% if session.start_time and session.end_time %}
-                                <span class="text-muted">• {{ session.start_time }} - {{ session.end_time }}</span>
-                            {% endif %}
-                        </div>
-                        <a href="{{ url_for('session_detail', session_id=session.id) }}" class="btn btn-sm btn-outline">View</a>
-                    </div>
-                {% endfor %}
-            </div>
-            {% if sessions|length > 5 %}
-                <p class="text-muted">Showing 5 most recent sessions. <a href="{{ url_for('sessions') }}?student={{ student.id }}">View all sessions</a></p>
-            {% endif %}
-        {% else %}
-            <p class="text-muted">No sessions recorded yet.</p>
+        {% if trial.notes %}
+        <div
+          style="
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 4px;
+            font-style: italic;
+          "
+        >
+          {{ trial.notes }}
+        </div>
         {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- SOAP Notes Section -->
+  {% if soap_notes %}
+  <div class="card">
+    <h2>Recent SOAP Notes</h2>
+    <div class="soap-notes-list">
+      {% for soap in soap_notes[:3] %}
+      <div
+        class="soap-item"
+        style="
+          padding: 10px;
+          margin-bottom: 8px;
+          background: #f8f9fa;
+          border-radius: 4px;
+        "
+      >
+        <div
+          style="display: flex; justify-content: between; align-items: center"
+        >
+          <span><strong>Session:</strong> {{ soap.session_date }}</span>
+          <a
+            href="{{ url_for('soap_note', session_id=soap.session_id) }}"
+            class="btn btn-sm btn-outline"
+            >View</a
+          >
+        </div>
+        {% if soap.assessment %}
+        <p style="margin: 5px 0 0 0; font-size: 0.9rem">
+          {{ soap.assessment[:100] }}{% if soap.assessment|length > 100 %}...{%
+          endif %}
+        </p>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Student Schedule Section (if exists) -->
+  {% if student_schedule and schools and student_schedule.school_id in schools
+  %}
+  <div class="card">
+    <div
+      style="
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+      "
+    >
+      <h2>School Schedule</h2>
+      <a
+        href="{{ url_for('student_schedule', student_id=student.id) }}"
+        class="btn btn-outline"
+        >Edit Schedule</a
+      >
     </div>
 
-    <!-- Recent Trial Data Section -->
-    {% if recent_trials %}
-        <div class="card">
-            <h2>Recent Trial Data</h2>
-            <div class="trials-list">
-                {% for trial in recent_trials %}
-                    <div class="trial-item" style="padding: 10px; margin-bottom: 8px; background: #f8f9fa; border-radius: 4px;">
-                        {% if trial.objective_id %}
-                            <strong>{{ trial.objective_description if trial.objective_description else 'Unknown Objective' }}</strong>
-                        {% else %}
-                            <strong>Trial Data</strong>
-                        {% endif %}
-                        <span class="text-muted">• {{ trial.independence_percentage }}% independent ({{ trial.total_trials }} trials)</span>
-                        <div style="font-size: 0.85rem; color: #6c757d; margin-top: 4px;">
-                            Independent: {{ trial.independent }} • Minimal: {{ trial.minimal_support }} • 
-                            Moderate: {{ trial.moderate_support }} • Maximal: {{ trial.maximal_support }} • 
-                            Incorrect: {{ trial.incorrect }}
-                        </div>
-                        {% if trial.notes %}
-                            <div style="font-size: 0.85rem; color: #6c757d; margin-top: 4px; font-style: italic;">
-                                {{ trial.notes }}
-                            </div>
-                        {% endif %}
-                    </div>
-                {% endfor %}
-            </div>
-        </div>
-    {% endif %}
+    <div>
+      <p>
+        <strong>School:</strong> {{ schools[student_schedule.school_id].name }}
+      </p>
+      <p><strong>Lunch Type:</strong> {{ student_schedule.lunch_type }}</p>
 
-    <!-- SOAP Notes Section -->
-    {% if soap_notes %}
-        <div class="card">
-            <h2>Recent SOAP Notes</h2>
-            <div class="soap-notes-list">
-                {% for soap in soap_notes[:3] %}
-                    <div class="soap-item" style="padding: 10px; margin-bottom: 8px; background: #f8f9fa; border-radius: 4px;">
-                        <div style="display: flex; justify-content: between; align-items: center;">
-                            <span><strong>Session:</strong> {{ soap.session_date }}</span>
-                            <a href="{{ url_for('soap_note', session_id=soap.session_id) }}" class="btn btn-sm btn-outline">View</a>
-                        </div>
-                        {% if soap.assessment %}
-                            <p style="margin: 5px 0 0 0; font-size: 0.9rem;">{{ soap.assessment[:100] }}{% if soap.assessment|length > 100 %}...{% endif %}</p>
-                        {% endif %}
-                    </div>
-                {% endfor %}
-            </div>
+      {% if student_schedule.classes %}
+      <h4>Class Schedule:</h4>
+      <div class="grid grid-2">
+        {% for period, class_name in student_schedule.classes.items() %}
+        <div style="padding: 5px">
+          <strong>Period {{ period }}:</strong> {{ class_name }}
         </div>
-    {% endif %}
-
-    <!-- Student Schedule Section (if exists) -->
-    {% if student_schedule and schools and student_schedule.school_id in schools %}
-        <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h2>School Schedule</h2>
-                <a href="{{ url_for('student_schedule', student_id=student.id) }}" class="btn btn-outline">Edit Schedule</a>
-            </div>
-            
-            <div>
-                <p><strong>School:</strong> {{ schools[student_schedule.school_id].name }}</p>
-                <p><strong>Lunch Type:</strong> {{ student_schedule.lunch_type }}</p>
-                
-                {% if student_schedule.classes %}
-                    <h4>Class Schedule:</h4>
-                    <div class="grid grid-2">
-                        {% for period, class_name in student_schedule.classes.items() %}
-                            <div style="padding: 5px;">
-                                <strong>Period {{ period }}:</strong> {{ class_name }}
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    {% endif %}
-
-    <!-- Quick Actions -->
-    <div class="card">
-        <h2>Quick Actions</h2>
-        <div class="button-group">
-            <a href="{{ url_for('new_session') }}?student_id={{ student.id }}" class="btn btn-primary">Schedule Session</a>
-            <a href="{{ url_for('new_goal', student_id=student.id) }}" class="btn btn-secondary">Add Goal</a>
-            {% if not student_schedule %}
-                <a href="{{ url_for('student_schedule', student_id=student.id) }}" class="btn btn-outline">Set School Schedule</a>
-            {% endif %}
-            <a href="{{ url_for('students') }}" class="btn btn-outline">Back to Students</a>
-        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
     </div>
+  </div>
+  {% endif %}
+
+  <!-- Quick Actions -->
+  <div class="card">
+    <h2>Quick Actions</h2>
+    <div class="button-group">
+      <a
+        href="{{ url_for('new_session') }}?student_id={{ student.id }}"
+        class="btn btn-primary"
+        >Schedule Session</a
+      >
+      <a
+        href="{{ url_for('new_goal', student_id=student.id) }}"
+        class="btn btn-secondary"
+        >Add Goal</a
+      >
+      {% if not student_schedule %}
+      <a
+        href="{{ url_for('student_schedule', student_id=student.id) }}"
+        class="btn btn-outline"
+        >Set School Schedule</a
+      >
+      {% endif %}
+      <a href="{{ url_for('students') }}" class="btn btn-outline"
+        >Back to Students</a
+      >
+    </div>
+  </div>
 </div>
 
 <script>
-function viewObjectiveProgress(objectiveId) {
+  function viewObjectiveProgress(objectiveId) {
     // Simple popup or redirect to view objective progress
     fetch(`/api/objectives/${objectiveId}/progress`)
-        .then(response => response.json())
-        .then(data => {
-            alert(`Current Progress: ${data.current_progress}%\nRecent trials: ${data.recent_trials.length}`);
-            // You could enhance this with a modal or dedicated page
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error loading progress data');
-        });
-}
+      .then((response) => response.json())
+      .then((data) => {
+        alert(
+          `Current Progress: ${data.current_progress}%\nRecent trials: ${data.recent_trials.length}`
+        );
+        // You could enhance this with a modal or dedicated page
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        alert("Error loading progress data");
+      });
+  }
 
-function deleteGoal(goalId, goalDescription) {
+  function deleteGoal(goalId, goalDescription) {
     const confirmed = confirm(
-        `⚠️ WARNING: This will permanently delete the goal and ALL its objectives!\n\n` +
+      `⚠️ WARNING: This will permanently delete the goal and ALL its objectives!\n\n` +
         `Goal: "${goalDescription}"\n\n` +
         `Are you absolutely sure you want to continue?\n\n` +
         `This action cannot be undone.`
     );
-    
-    if (confirmed) {
-        // Create and submit a form for POST request
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/goals/${goalId}/delete`;
-        document.body.appendChild(form);
-        form.submit();
-    }
-}
 
-function deleteObjective(objectiveId, objectiveDescription) {
+    if (confirmed) {
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = `/goals/${goalId}/delete`; // ✅ This should work
+      document.body.appendChild(form);
+      form.submit();
+    }
+  }
+
+  function deleteObjective(objectiveId, objectiveDescription) {
     const confirmed = confirm(
-        `⚠️ Are you sure you want to delete this objective?\n\n` +
+      `⚠️ Are you sure you want to delete this objective?\n\n` +
         `Objective: "${objectiveDescription}"\n\n` +
         `This will also delete all trial data for this objective.\n` +
         `This action cannot be undone.`
     );
-    
+
     if (confirmed) {
-        // Create and submit a form for POST request
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/objectives/${objectiveId}/delete`;
-        document.body.appendChild(form);
-        form.submit();
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = `/objectives/${objectiveId}/delete`; // ✅ This should work
+      document.body.appendChild(form);
+      form.submit();
     }
-}
+  }
 </script>
 
 <style>
-.badge {
+  .badge {
     display: inline-block;
     padding: 4px 8px;
     font-size: 0.75rem;
@@ -303,44 +501,44 @@ function deleteObjective(objectiveId, objectiveDescription) {
     white-space: nowrap;
     vertical-align: baseline;
     border-radius: 0.25rem;
-}
+  }
 
-.badge-warning {
+  .badge-warning {
     color: #212529;
     background-color: #ffc107;
-}
+  }
 
-.badge-danger {
+  .badge-danger {
     color: #fff;
     background-color: #dc3545;
-}
+  }
 
-.btn-danger {
+  .btn-danger {
     background-color: #dc3545;
     border-color: #dc3545;
     color: white;
-}
+  }
 
-.btn-danger:hover {
+  .btn-danger:hover {
     background-color: #c82333;
     border-color: #bd2130;
     color: white;
-}
+  }
 
-.goal-section {
+  .goal-section {
     transition: box-shadow 0.2s;
-}
+  }
 
-.goal-section:hover {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
+  .goal-section:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
 
-.objective-item {
+  .objective-item {
     transition: background-color 0.2s;
-}
+  }
 
-.objective-item:hover {
+  .objective-item:hover {
     background-color: #f8f9fa !important;
-}
+  }
 </style>
 {% endblock %}

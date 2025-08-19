@@ -37,9 +37,14 @@ def dashboard():
         'upcoming_sessions': len(upcoming_sessions)
     }
 
+    from datetime import date
+    today = date.today().isoformat()
+
     return render_template('dashboard.html',
                          stats=stats,
                          recent_sessions=recent_sessions,
                          pending_soap_notes=pending_soap_notes,
                          upcoming_sessions=upcoming_sessions,
-                         recent_schools=recent_schools)
+                         recent_schools=recent_schools,
+                         today=today)
+

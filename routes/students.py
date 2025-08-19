@@ -124,3 +124,81 @@ def student_schedule(student_id):
         schedule.save(db)
         return redirect(url_for('students.student_detail', student_id=student_id))
     return render_template('student_schedule_form.html', student=student, schedule=schedule, schools=schools)
+
+
+@students_bp.route('/goals/<int:goal_id>/edit', methods=['GET', 'POST'])
+def edit_goal(goal_id):
+    db = get_db()
+    goal = Goal.get_by_id(db, goal_id)
+    if not goal:
+        return "Goal not found", 404
+
+    student = Student.get_by_id(db, goal.student_id)
+
+    if request.method == 'POST':
+        # Update goal logic here
+        goal.description = request.form['description']
+        goal.target_accuracy = int(request.form.get('target_accuracy', 80))
+        # Add save method to Goal model or use direct SQL
+        return redirect(url_for('students.student_detail', student_id=goal.student_id))
+
+    return render_template('goal_form.html', goal=goal, student=student, edit_mode=True)
+
+
+@students_bp.route('/goals/<int:goal_id>/delete', methods=['POST'])
+def delete_goal(goal_id):
+    db = get_db()
+    goal = Goal.get_by_id(db, goal_id)
+    if not goal:
+        return "Goal not found", 404
+
+    student_id = goal.student_id
+
+    # Delete goal and all its objectives and trial logs
+    db.execute(
+        'DELETE FROM trial_logs WHERE objective_id IN (SELECT id FROM objectives WHERE goal_id = ?)', (goal_id,))
+    db.execute('DELETE FROM objectives WHERE goal_id = ?', (goal_id,))
+    db.execute('DELETE FROM goals WHERE id = ?', (goal_id,))
+    db.commit()
+
+    return redirect(url_for('students.student_detail', student_id=student_id))
+
+
+@students_bp.route('/objectives/<int:objective_id>/edit', methods=['GET', 'POST'])
+def edit_objective(objective_id):
+    db = get_db()
+    objective = Objective.get_by_id(db, objective_id)
+    if not objective:
+        return "Objective not found", 404
+
+    goal = objective.get_goal(db)
+    student = Student.get_by_id(db, goal.student_id)
+
+    if request.method == 'POST':
+        # Update objective logic here
+        objective.description = request.form['description']
+        objective.target_percentage = int(
+            request.form.get('target_percentage', 80))
+        objective.notes = request.form.get('notes', '')
+        # Add save method or use direct SQL
+        return redirect(url_for('students.student_detail', student_id=goal.student_id))
+
+    return render_template('objective_form.html', objective=objective, goal=goal, student=student, edit_mode=True)
+
+
+@students_bp.route('/objectives/<int:objective_id>/delete', methods=['POST'])
+def delete_objective(objective_id):
+    db = get_db()
+    objective = Objective.get_by_id(db, objective_id)
+    if not objective:
+        return "Objective not found", 404
+
+    goal = objective.get_goal(db)
+    student_id = goal.student_id
+
+    # Delete objective and all its trial logs
+    db.execute('DELETE FROM trial_logs WHERE objective_id = ?', (objective_id,))
+    db.execute('DELETE FROM objectives WHERE id = ?', (objective_id,))
+    db.commit()
+
+    return redirect(url_for('students.student_detail', student_id=student_id))

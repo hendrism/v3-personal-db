@@ -13,6 +13,7 @@ def sessions():
         sessions = Session.get_by_date_with_student_info(db, date_filter)
     else:
         sessions = Session.get_recent_with_student_info(db, limit=20)
+    from datetime import date
     today = date.today().isoformat()
     return render_template('sessions.html', sessions=sessions, today=today)
 

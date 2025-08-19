@@ -379,19 +379,26 @@
               >
             </h1>
           </div>
+          <!-- Replace the navigation section -->
           <nav>
             <ul>
-              <li><a href="/">Dashboard</a></li>
-              <li><a href="/students">Students</a></li>
-              <li><a href="/schools">Schools</a></li>
-              <li><a href="/sessions">Sessions</a></li>
               <li>
-                <a href="/students/new" class="btn btn-sm btn-success"
+                <a href="{{ url_for('dashboard.dashboard') }}">Dashboard</a>
+              </li>
+              <li><a href="{{ url_for('students.students') }}">Students</a></li>
+              <li><a href="{{ url_for('schools.schools') }}">Schools</a></li>
+              <li><a href="{{ url_for('sessions.sessions') }}">Sessions</a></li>
+              <li>
+                <a
+                  href="{{ url_for('students.new_student') }}"
+                  class="btn btn-sm btn-success"
                   >+ New Student</a
                 >
               </li>
               <li>
-                <a href="/sessions/new" class="btn btn-sm btn-warning"
+                <a
+                  href="{{ url_for('sessions.new_session') }}"
+                  class="btn btn-sm btn-warning"
                   >+ New Session</a
                 >
               </li>

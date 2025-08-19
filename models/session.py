@@ -26,7 +26,8 @@ class Session(BaseModel):
             return False
 
         if isinstance(self.session_date, str):
-            session_date = datetime.strptime(self.session_date, '%Y-%m-%d').date()
+            session_date = datetime.strptime(
+                self.session_date, '%Y-%m-%d').date()
         else:
             session_date = self.session_date
 
@@ -47,7 +48,8 @@ class Session(BaseModel):
 
     @classmethod
     def get_recent(cls, db, limit=10):
-        cursor = db.execute("SELECT * FROM sessions ORDER BY session_date DESC, created_at DESC LIMIT ?", (limit,))
+        cursor = db.execute(
+            "SELECT * FROM sessions ORDER BY session_date DESC, created_at DESC LIMIT ?", (limit,))
         return [cls.from_row(row) for row in cursor.fetchall()]
 
     @classmethod
@@ -61,7 +63,8 @@ class Session(BaseModel):
 
     @classmethod
     def get_by_student(cls, db, student_id):
-        cursor = db.execute("SELECT * FROM sessions WHERE student_id = ? ORDER BY session_date DESC", (student_id,))
+        cursor = db.execute(
+            "SELECT * FROM sessions WHERE student_id = ? ORDER BY session_date DESC", (student_id,))
         return [cls.from_row(row) for row in cursor.fetchall()]
 
     @classmethod
@@ -87,6 +90,51 @@ class Session(BaseModel):
         session_id = cursor.lastrowid
         db.commit()
         return cls.get_by_id(db, session_id)
+    # Add these methods to the Session class in models/session.py
+
+
+    @classmethod
+    def get_by_date_with_student_info(cls, db, date_str):
+        """Get sessions by date with student names and SOAP note status."""
+        cursor = db.execute('''
+            SELECT s.*, st.first_name, st.last_name,
+                CASE WHEN sn.id IS NOT NULL THEN 1 ELSE 0 END as has_soap_note
+            FROM sessions s 
+            JOIN students st ON s.student_id = st.id 
+            LEFT JOIN soap_notes sn ON s.id = sn.session_id
+            WHERE s.session_date = ?
+            ORDER BY s.start_time, s.created_at
+        ''', (date_str,))
+
+        sessions = []
+        for row in cursor.fetchall():
+            session = cls.from_row(row)
+            session.student_name = f"{row['first_name']} {row['last_name']}"
+            session.has_soap_note = bool(row['has_soap_note'])
+            sessions.append(session)
+        return sessions
+
+
+    @classmethod
+    def get_recent_with_student_info(cls, db, limit=20):
+        """Get recent sessions with student names and SOAP note status."""
+        cursor = db.execute('''
+            SELECT s.*, st.first_name, st.last_name,
+                CASE WHEN sn.id IS NOT NULL THEN 1 ELSE 0 END as has_soap_note
+            FROM sessions s 
+            JOIN students st ON s.student_id = st.id 
+            LEFT JOIN soap_notes sn ON s.id = sn.session_id
+            ORDER BY s.session_date DESC, s.created_at DESC 
+            LIMIT ?
+        ''', (limit,))
+
+        sessions = []
+        for row in cursor.fetchall():
+            session = cls.from_row(row)
+            session.student_name = f"{row['first_name']} {row['last_name']}"
+            session.has_soap_note = bool(row['has_soap_note'])
+            sessions.append(session)
+        return sessions
 
 
 class TrialLog(BaseModel):
@@ -122,7 +170,7 @@ class TrialLog(BaseModel):
     def success_percentage(self):
         total = self.total_trials
         successful = (self.independent + self.minimal_support +
-                     self.moderate_support + self.maximal_support)
+                      self.moderate_support + self.maximal_support)
         return round((successful / total) * 100, 1) if total > 0 else 0
 
     def get_objective(self, db):
@@ -148,7 +196,8 @@ class TrialLog(BaseModel):
 
     @classmethod
     def get_by_session(cls, db, session_id):
-        cursor = db.execute("SELECT * FROM trial_logs WHERE session_id = ?", (session_id,))
+        cursor = db.execute(
+            "SELECT * FROM trial_logs WHERE session_id = ?", (session_id,))
         return [cls.from_row(row) for row in cursor.fetchall()]
 
     @classmethod
@@ -195,3 +244,5 @@ class TrialLog(BaseModel):
         trial_id = cursor.lastrowid
         db.commit()
         return cls.get_by_id(db, trial_id)
+
+    # Add these methods to the Session class in models/session.py
