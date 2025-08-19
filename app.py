@@ -287,6 +287,39 @@ def update_school_schedule(school_id):
     
     return redirect(url_for('school_detail', school_id=school_id))
 
+@app.route('/students/<int:student_id>/schedule', methods=['GET', 'POST'])
+def student_schedule(student_id):
+    """Manage a student's schedule."""
+    db = get_db()
+    student = Student.get_by_id(db, student_id)
+    if not student:
+        return "Student not found", 404
+    
+    schedule = StudentSchedule.get_by_student(db, student_id)
+    schools = School.get_all(db)
+    
+    if request.method == 'POST':
+        if not schedule:
+            schedule = StudentSchedule(student_id=student_id)
+        
+        schedule.school_id = request.form['school_id']
+        schedule.lunch_type = request.form.get('lunch_type', 'A')
+        
+        # Parse class schedule
+        classes = {}
+        for period in range(1, 9):
+            class_name = request.form.get(f'period_{period}', '').strip()
+            if class_name:
+                classes[str(period)] = class_name
+        schedule.classes = classes
+        
+        schedule.save(db)
+        return redirect(url_for('student_detail', student_id=student_id))
+    
+    return render_template('student_schedule_form.html', 
+                         student=student, 
+                         schedule=schedule,
+                         schools=schools)
 
 if __name__ == '__main__':
     # Create data directory if it doesn't exist
