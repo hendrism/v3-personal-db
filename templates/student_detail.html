@@ -179,7 +179,7 @@
                 {% for soap in soap_notes[:3] %}
                     <div class="soap-item" style="padding: 10px; margin-bottom: 8px; background: #f8f9fa; border-radius: 4px;">
                         <div style="display: flex; justify-content: between; align-items: center;">
-                            <span><strong>Session:</strong> {{ soap.get_session(get_db()).session_date }}</span>
+                            <span><strong>Session:</strong> {{ soap.session_date }}</span>
                             <a href="{{ url_for('soap_note', session_id=soap.session_id) }}" class="btn btn-sm btn-outline">View</a>
                         </div>
                         {% if soap.assessment %}
