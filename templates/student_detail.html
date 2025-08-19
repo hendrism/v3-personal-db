@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}{{ student.display_name }} - Personal Student Database{% endblock %}
+
+{% block content %}
+<!-- Student Header -->
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h2 class="mb-0">{{ student.display_name }}</h2>
+            <p class="text-muted">
+                {{ student.grade_level }}
+                {% if student.pronouns %} • {{ student.pronouns }}{% endif %}
+            </p>
+        </div>
+        <div>
+            <a href="/sessions/new?student_id={{ student.id }}" class="btn btn-success">+ New Session</a>
+            <a href="/students" class="btn">Back to Students</a>
+        </div>
+    </div>
+    
+    {% if student.notes %}
+    <div style="margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 4px;">
+        <strong>Notes:</strong> {{ student.notes }}
+    </div>
+    {% endif %}
+</div>
+
+<div class="grid grid-2">
+    <!-- Recent Sessions -->
+    <div class="card">
+        <h2>Recent Sessions</h2>
+        {% if sessions %}
+            {% for session in sessions[:5] %}
+            <div style="padding: 0.75rem 0; border-bottom: 1px solid #eee;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>{{ session.session_date }}</strong>
+                        <span class="text-muted">• {{ session.session_type }}</span>
+                    </div>
+                    <a href="/sessions/{{ session.id }}" class="btn btn-sm">View</a>
+                </div>
+                {% if session.notes %}
+                    <p class="text-muted" style="margin: 0.25rem 0 0 0; font-size: 0.9rem;">{{ session.notes[:100] }}{% if session.notes|length > 100 %}...{% endif %}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+            
+            {% if sessions|length > 5 %}
+                <div class="mt-1">
+                    <a href="/sessions?student_id={{ student.id }}" class="btn btn-sm">View All Sessions ({{ sessions|length }})</a>
+                </div>
+            {% endif %}
+        {% else %}
+            <p class="text-muted">No sessions recorded yet.</p>
+            <a href="/sessions/new?student_id={{ student.id }}" class="btn btn-sm btn-success">Schedule First Session</a>
+        {% endif %}
+    </div>
+
+    <!-- Goals -->
+    <div class="card">
+        <h2>Current Goals</h2>
+        {% if goals %}
+            {% for goal in goals %}
+            <div style="padding: 0.75rem 0; border-bottom: 1px solid #eee;">
+                <p style="margin: 0;"><strong>{{ goal.description }}</strong></p>
+                <p class="text-muted" style="margin: 0.25rem 0 0 0; font-size: 0.9rem;">
+                    Target: {{ goal.target_accuracy }}% accuracy
+                </p>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="text-muted">No goals set yet.</p>
+            <button class="btn btn-sm btn-success" onclick="alert('Goal creation form coming soon!')">+ Add Goal</button>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Recent Trial Data -->
+{% if recent_trials %}
+<div class="card">
+    <h2>Recent Trial Data</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Trials</th>
+                <th>Independence</th>
+                <th>Success Rate</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for trial in recent_trials %}
+            <tr>
+                <td>{{ trial.session_date }}</td>
+                <td>{{ trial.total_trials }}</td>
+                <td>{{ trial.independence_percentage }}%</td>
+                <td>{{ trial.success_percentage }}%</td>
+                <td>{{ trial.notes[:50] }}{% if trial.notes and trial.notes|length > 50 %}...{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<!-- SOAP Notes -->
+{% if soap_notes %}
+<div class="card">
+    <h2>Recent SOAP Notes</h2>
+    {% for soap in soap_notes[:3] %}
+    <div style="padding: 1rem 0; border-bottom: 1px solid #eee;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <strong>{{ soap.session_date }}</strong>
+            <a href="/soap/{{ soap.session_id }}" class="btn btn-sm">View Full Note</a>
+        </div>
+        {% if soap.assessment %}
+            <p class="text-muted" style="margin: 0.5rem 0 0 0; font-size: 0.9rem;">
+                <strong>Assessment:</strong> {{ soap.assessment[:150] }}{% if soap.assessment|length > 150 %}...{% endif %}
+            </p>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

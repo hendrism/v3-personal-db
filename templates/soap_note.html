@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}SOAP Note - {{ session.student_name }} - {{ session.session_date }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2 class="mb-0">SOAP Note</h2>
+        <div>
+            <button onclick="generateSOAP()" class="btn btn-warning">🤖 Auto-Generate</button>
+            <a href="/sessions/{{ session.id }}" class="btn">Back to Session</a>
+        </div>
+    </div>
+    
+    <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 4px;">
+        <strong>{{ session.student_name }}</strong> • {{ session.session_date }} • {{ session.session_type }}
+    </div>
+    
+    <form id="soapForm">
+        <input type="hidden" name="session_id" value="{{ session.id }}">
+        
+        <div class="form-group">
+            <label for="subjective">
+                <strong>S</strong>ubjective
+                <span class="text-muted">(Patient/caregiver reports, observations)</span>
+            </label>
+            <textarea id="subjective" name="subjective" rows="4" placeholder="Patient reported... Caregiver noted... Student appeared...">{{ soap_note.subjective if soap_note else '' }}</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="objective">
+                <strong>O</strong>bjective
+                <span class="text-muted">(Trial data, measurable observations)</span>
+            </label>
+            <textarea id="objective" name="objective" rows="6" placeholder="Trial data collected... Accuracy observed... Cuing levels required...">{{ soap_note.objective if soap_note else '' }}</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="assessment">
+                <strong>A</strong>ssessment
+                <span class="text-muted">(Clinical judgment, progress analysis)</span>
+            </label>
+            <textarea id="assessment" name="assessment" rows="4" placeholder="Student demonstrated... Progress noted in... Areas of difficulty include...">{{ soap_note.assessment if soap_note else '' }}</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="plan">
+                <strong>P</strong>lan
+                <span class="text-muted">(Next steps, recommendations)</span>
+            </label>
+            <textarea id="plan" name="plan" rows="4" placeholder="Continue current interventions... Modify approach to... Next session will focus on...">{{ soap_note.plan if soap_note else '' }}</textarea>
+        </div>
+        
+        <div style="display: flex; gap: 1rem;">
+            <button type="submit" class="btn btn-success">Save SOAP Note</button>
+            <button type="button" onclick="previewNote()" class="btn">Preview</button>
+        </div>
+    </form>
+</div>
+
+<!-- Quick Templates -->
+<div class="card">
+    <h2>Quick Templates</h2>
+    <div class="grid grid-3">
+        <button onclick="insertTemplate('articulation')" class="btn btn-sm">Articulation Session</button>
+        <button onclick="insertTemplate('language')" class="btn btn-sm">Language Session</button>
+        <button onclick="insertTemplate('fluency')" class="btn btn-sm">Fluency Session</button>
+    </div>
+</div>
+
+<script>
+    const templates = {
+        articulation: {
+            subjective: "Student was cooperative and engaged throughout the session. No concerns reported by classroom teacher.",
+            objective: "Targeted /r/ sound in initial position of words. Student completed 20 trials with following results: Independent: X, Minimal support: X, Moderate support: X, Maximal support: X, Incorrect: X. Cuing strategies included verbal models and visual placement cues.",
+            assessment: "Student demonstrated improved accuracy with /r/ sound when provided with visual and verbal cues. Progress noted compared to previous session. Student benefits from structured practice and immediate feedback.",
+            plan: "Continue targeting /r/ sound in initial position. Begin introducing /r/ in medial position next session. Provide home practice materials for carryover."
+        },
+        language: {
+            subjective: "Student participated willingly in activities. Teacher reports improved sentence structure in classroom assignments.",
+            objective: "Worked on sentence expansion using visual supports. Completed activities targeting verb tense and sentence length. Student produced X expanded sentences with Y% accuracy.",
+            assessment: "Student shows consistent improvement in expressive language skills. Responds well to visual supports and structured activities. Ready to advance to more complex sentence structures.",
+            plan: "Continue sentence expansion activities. Introduce complex sentences next session. Provide teacher with strategies for classroom carryover."
+        },
+        fluency: {
+            subjective: "Student reports feeling more confident speaking in small groups. Parent notes improved fluency at home during conversations.",
+            objective: "Practiced fluency strategies including easy onset and prolonged speech. Measured fluency in conversation and reading tasks. Fluency rate: X words per minute with Y% fluent speech.",
+            assessment: "Student demonstrates good understanding and application of fluency strategies. Improvement noted in structured tasks. Generalization to spontaneous speech in progress.",
+            plan: "Continue fluency strategy practice. Focus on generalization to classroom and social situations. Schedule follow-up with teacher regarding classroom strategies."
+        }
+    };
+    
+    function insertTemplate(type) {
+        const template = templates[type];
+        if (template) {
+            document.getElementById('subjective').value = template.subjective;
+            document.getElementById('objective').value = template.objective;
+            document.getElementById('assessment').value = template.assessment;
+            document.getElementById('plan').value = template.plan;
+        }
+    }
+    
+    function generateSOAP() {
+        // This would call your backend to auto-generate based on trial data
+        alert('Auto-generation feature coming soon! Will analyze trial data and create draft SOAP note.');
+    }
+    
+    function previewNote() {
+        const subjective = document.getElementById('subjective').value;
+        const objective = document.getElementById('objective').value;
+        const assessment = document.getElementById('assessment').value;
+        const plan = document.getElementById('plan').value;
+        
+        const preview = `
+SUBJECTIVE: ${subjective}
+
+OBJECTIVE: ${objective}
+
+ASSESSMENT: ${assessment}
+
+PLAN: ${plan}
+        `;
+        
+        alert(preview);
+    }
+    
+    // Form submission
+    document.getElementById('soapForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        fetch('/soap/save', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('SOAP note saved successfully!');
+            } else {
+                alert('Error saving SOAP note');
+            }
+        })
+        .catch(error => {
+            alert('Error saving SOAP note: ' + error);
+        });
+    });
+</script>
+{% endblock %}

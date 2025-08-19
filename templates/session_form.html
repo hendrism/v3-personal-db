@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}New Session - Personal Student Database{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Schedule New Session</h2>
+    
+    <form method="POST">
+        <div class="form-group">
+            <label for="student_id">Student *</label>
+            <select id="student_id" name="student_id" required>
+                <option value="">Select a student</option>
+                {% for student in students %}
+                <option value="{{ student.id }}" {% if request.args.get('student_id') == student.id|string %}selected{% endif %}>
+                    {{ student.display_name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="grid grid-2">
+            <div class="form-group">
+                <label for="session_date">Session Date *</label>
+                <input type="date" id="session_date" name="session_date" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="session_type">Session Type</label>
+                <select id="session_type" name="session_type">
+                    <option value="Individual">Individual</option>
+                    <option value="Group">Group</option>
+                    <option value="Consultation">Consultation</option>
+                    <option value="Assessment">Assessment</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="grid grid-2">
+            <div class="form-group">
+                <label for="start_time">Start Time</label>
+                <input type="time" id="start_time" name="start_time">
+            </div>
+            
+            <div class="form-group">
+                <label for="end_time">End Time</label>
+                <input type="time" id="end_time" name="end_time">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="location">Location</label>
+            <input type="text" id="location" name="location" placeholder="e.g., Room 203, Office, Classroom">
+        </div>
+        
+        <div class="form-group">
+            <label for="notes">Session Notes</label>
+            <textarea id="notes" name="notes" rows="3" placeholder="Any notes about the session plan or special considerations..."></textarea>
+        </div>
+        
+        <div style="display: flex; gap: 1rem;">
+            <button type="submit" class="btn btn-success">Create Session</button>
+            <a href="/sessions" class="btn">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Set today's date as default
+    document.getElementById('session_date').value = new Date().toISOString().split('T')[0];
+    
+    // Auto-calculate end time when start time changes
+    document.getElementById('start_time').addEventListener('change', function() {
+        const startTime = this.value;
+        if (startTime) {
+            const [hours, minutes] = startTime.split(':');
+            const endTime = new Date();
+            endTime.setHours(parseInt(hours), parseInt(minutes) + 30); // Default 30-minute session
+            
+            const endHours = endTime.getHours().toString().padStart(2, '0');
+            const endMinutes = endTime.getMinutes().toString().padStart(2, '0');
+            
+            document.getElementById('end_time').value = `${endHours}:${endMinutes}`;
+        }
+    });
+</script>
+{% endblock %}

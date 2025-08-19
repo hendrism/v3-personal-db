@@ -1,0 +1,190 @@
+<!-- templates/sessions.html -->
+{% extends "base.html" %}
+
+{% block title %}Sessions - Personal Student Database{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2 class="mb-0">Sessions</h2>
+        <a href="/sessions/new" class="btn btn-success">+ New Session</a>
+    </div>
+
+    <!-- Quick filters -->
+    <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 4px;">
+        <strong>Quick Filters:</strong>
+        <div style="margin-top: 0.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+            <a href="/sessions" class="btn btn-sm">All Sessions</a>
+            <a href="/sessions?date={{ today }}" class="btn btn-sm btn-warning">Today</a>
+            <a href="/sessions?week=current" class="btn btn-sm">This Week</a>
+            <input type="date" id="dateFilter" onchange="filterByDate(this.value)" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+        </div>
+    </div>
+
+    {% if sessions %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Type</th>
+                    <th>Location</th>
+                    <th>Status</th>
+                    <th>SOAP Note</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for session in sessions %}
+                <tr>
+                    <td>
+                        <a href="/students/{{ session.student_id }}" style="text-decoration: none; color: #3498db; font-weight: 500;">
+                            {{ session.student_name if session.student_name else 'Student ' + session.student_id|string }}
+                        </a>
+                    </td>
+                    <td>{{ session.session_date }}</td>
+                    <td>
+                        {% if session.start_time and session.end_time %}
+                            {{ session.start_time }} - {{ session.end_time }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>{{ session.session_type }}</td>
+                    <td>{{ session.location or '-' }}</td>
+                    <td>
+                        <span class="status-badge status-{{ session.status.lower().replace(' ', '-') }}">
+                            {{ session.status }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if session.has_soap_note %}
+                            <span style="color: #27ae60;">✓ Complete</span>
+                        {% else %}
+                            <a href="/soap/{{ session.id }}" class="btn btn-sm btn-warning">Create</a>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="/sessions/{{ session.id }}" class="btn btn-sm">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Pagination info if needed -->
+        {% if sessions|length >= 20 %}
+        <div style="margin-top: 1rem; text-align: center; color: #666;">
+            Showing recent 20 sessions. Use date filters to find older sessions.
+        </div>
+        {% endif %}
+    {% else %}
+        <div class="text-center" style="padding: 3rem;">
+            <p class="text-muted">No sessions found.</p>
+            {% if request.args.get('date') %}
+                <p class="text-muted">Try selecting a different date or <a href="/sessions">view all sessions</a>.</p>
+            {% endif %}
+            <a href="/sessions/new" class="btn btn-success mt-1">Schedule Your First Session</a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Session summary stats -->
+{% if sessions %}
+<div class="card">
+    <h2>Session Summary</h2>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">{{ sessions|length }}</div>
+            <div class="stat-label">Sessions Shown</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">
+                {% set completed = [] %}
+                {% for session in sessions %}
+                    {% if session.status == 'Completed' %}
+                        {% set _ = completed.append(1) %}
+                    {% endif %}
+                {% endfor %}
+                {{ completed|length }}
+            </div>
+            <div class="stat-label">Completed</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">
+                {% set missing_soap = [] %}
+                {% for session in sessions %}
+                    {% if not session.has_soap_note %}
+                        {% set _ = missing_soap.append(1) %}
+                    {% endif %}
+                {% endfor %}
+                {{ missing_soap|length }}
+            </div>
+            <div class="stat-label">Missing SOAP Notes</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">
+                {% set individual = [] %}
+                {% for session in sessions %}
+                    {% if session.session_type == 'Individual' %}
+                        {% set _ = individual.append(1) %}
+                    {% endif %}
+                {% endfor %}
+                {{ individual|length }}
+            </div>
+            <div class="stat-label">Individual Sessions</div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<style>
+    /* Status badges */
+    .status-badge {
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .status-completed {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .status-scheduled {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+    
+    .status-cancelled {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .status-no-show {
+        background: #fff3cd;
+        color: #856404;
+    }
+</style>
+
+<script>
+    function filterByDate(date) {
+        if (date) {
+            window.location.href = `/sessions?date=${date}`;
+        }
+    }
+    
+    // Set today's date as default in date picker
+    document.addEventListener('DOMContentLoaded', function() {
+        const dateFilter = document.getElementById('dateFilter');
+        const urlParams = new URLSearchParams(window.location.search);
+        const dateParam = urlParams.get('date');
+        
+        if (dateParam) {
+            dateFilter.value = dateParam;
+        }
+    });
+</script>
+{% endblock %}

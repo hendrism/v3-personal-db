@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}Session: {{ student.display_name }} - {{ session.session_date }}{% endblock %}
+
+{% block content %}
+<!-- Session Header -->
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h2 class="mb-0">{{ student.display_name }} - {{ session.session_date }}</h2>
+            <p class="text-muted">
+                {{ session.session_type }}
+                {% if session.start_time and session.end_time %}
+                    • {{ session.start_time }} - {{ session.end_time }}
+                {% endif %}
+                {% if session.location %} • {{ session.location }}{% endif %}
+            </p>
+        </div>
+        <div>
+            {% if not soap_note %}
+                <a href="/soap/{{ session.id }}" class="btn btn-warning">Create SOAP Note</a>
+            {% else %}
+                <a href="/soap/{{ session.id }}" class="btn">View SOAP Note</a>
+            {% endif %}
+            <a href="/students/{{ student.id }}" class="btn">Back to Student</a>
+        </div>
+    </div>
+    
+    {% if session.notes %}
+    <div style="margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 4px;">
+        <strong>Session Notes:</strong> {{ session.notes }}
+    </div>
+    {% endif %}
+</div>
+
+<div class="grid grid-2">
+    <!-- Trial Data Entry -->
+    <div class="card">
+        <h2>Trial Data Entry</h2>
+        
+        <form id="trialForm">
+            <input type="hidden" name="session_id" value="{{ session.id }}">
+            
+            {% if goals %}
+            <div class="form-group">
+                <label for="goal_id">Goal (Optional)</label>
+                <select id="goal_id" name="goal_id">
+                    <option value="">Select a goal</option>
+                    {% for goal in goals %}
+                    <option value="{{ goal.id }}">{{ goal.description }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label for="independent">Independent</label>
+                    <input type="number" id="independent" name="independent" min="0" value="0">
+                </div>
+                
+                <div class="form-group">
+                    <label for="minimal_support">Minimal Support</label>
+                    <input type="number" id="minimal_support" name="minimal_support" min="0" value="0">
+                </div>
+            </div>
+            
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label for="moderate_support">Moderate Support</label>
+                    <input type="number" id="moderate_support" name="moderate_support" min="0" value="0">
+                </div>
+                
+                <div class="form-group">
+                    <label for="maximal_support">Maximal Support</label>
+                    <input type="number" id="maximal_support" name="maximal_support" min="0" value="0">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="incorrect">Incorrect</label>
+                <input type="number" id="incorrect" name="incorrect" min="0" value="0">
+            </div>
+            
+            <div class="form-group">
+                <label for="notes">Trial Notes</label>
+                <textarea id="notes" name="notes" rows="2" placeholder="Notes about this trial set..."></textarea>
+            </div>
+            
+            <button type="submit" class="btn btn-success">Add Trial Data</button>
+            
+            <!-- Live calculations -->
+            <div id="calculations" class="mt-1" style="padding: 1rem; background: #f8f9fa; border-radius: 4px; display: none;">
+                <strong>Quick Stats:</strong>
+                <div style="margin-top: 0.5rem;">
+                    <span id="totalTrials">Total Trials: 0</span> • 
+                    <span id="independence">Independence: 0%</span> • 
+                    <span id="successRate">Success Rate: 0%</span>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Previous Trial Data -->
+    <div class="card">
+        <h2>Session Trial Data</h2>
+        
+        <div id="trialsList">
+            {% if trial_logs %}
+                {% for trial in trial_logs %}
+                <div style="padding: 1rem; background: #f8f9fa; border-radius: 4px; margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: between; align-items: center;">
+                        <strong>{{ trial.total_trials }} trials</strong>
+                        <span class="text-muted">{{ trial.independence_percentage }}% independence</span>
+                    </div>
+                    <div style="margin-top: 0.5rem; font-size: 0.9rem;">
+                        Independent: {{ trial.independent }} • 
+                        Minimal: {{ trial.minimal_support }} • 
+                        Moderate: {{ trial.moderate_support }} • 
+                        Maximal: {{ trial.maximal_support }} • 
+                        Incorrect: {{ trial.incorrect }}
+                    </div>
+                    {% if trial.notes %}
+                        <p style="margin: 0.5rem 0 0 0; font-style: italic;">{{ trial.notes }}</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">No trial data recorded yet for this session.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    // Live calculation updates
+    function updateCalculations() {
+        const independent = parseInt(document.getElementById('independent').value) || 0;
+        const minimal = parseInt(document.getElementById('minimal_support').value) || 0;
+        const moderate = parseInt(document.getElementById('moderate_support').value) || 0;
+        const maximal = parseInt(document.getElementById('maximal_support').value) || 0;
+        const incorrect = parseInt(document.getElementById('incorrect').value) || 0;
+        
+        const total = independent + minimal + moderate + maximal + incorrect;
+        const successful = independent + minimal + moderate + maximal;
+        
+        if (total > 0) {
+            const independencePercent = Math.round((independent / total) * 100);
+            const successPercent = Math.round((successful / total) * 100);
+            
+            document.getElementById('totalTrials').textContent = `Total Trials: ${total}`;
+            document.getElementById('independence').textContent = `Independence: ${independencePercent}%`;
+            document.getElementById('successRate').textContent = `Success Rate: ${successPercent}%`;
+            document.getElementById('calculations').style.display = 'block';
+        } else {
+            document.getElementById('calculations').style.display = 'none';
+        }
+    }
+    
+    // Attach event listeners
+    ['independent', 'minimal_support', 'moderate_support', 'maximal_support', 'incorrect'].forEach(id => {
+        document.getElementById(id).addEventListener('input', updateCalculations);
+    });
+    
+    // Form submission
+    document.getElementById('trialForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        fetch('/trials/new', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Reset form
+            this.reset();
+            updateCalculations();
+            
+            // Reload the page to show new trial data
+            location.reload();
+        })
+        .catch(error => {
+            alert('Error saving trial data: ' + error);
+        });
+    });
+</script>
+{% endblock %}

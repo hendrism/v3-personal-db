@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Personal Student Database{% endblock %}
+
+{% block content %}
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.total_students }}</div>
+        <div class="stat-label">Active Students</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.sessions_this_week }}</div>
+        <div class="stat-label">Sessions This Week</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.pending_soap_notes }}</div>
+        <div class="stat-label">Pending SOAP Notes</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.upcoming_sessions }}</div>
+        <div class="stat-label">Upcoming Sessions</div>
+    </div>
+</div>
+
+<div class="grid grid-2">
+    <!-- Recent Sessions -->
+    <div class="card">
+        <h2>Recent Sessions</h2>
+        {% if recent_sessions %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for session in recent_sessions %}
+                    <tr>
+                        <td>{{ session.student_name }}</td>
+                        <td>{{ session.session_date }}</td>
+                        <td>{{ session.session_type }}</td>
+                        <td>
+                            <a href="/sessions/{{ session.id }}" class="btn btn-sm">View</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="text-muted">No recent sessions found.</p>
+        {% endif %}
+        <div class="mt-1">
+            <a href="/sessions" class="btn btn-sm">View All Sessions</a>
+        </div>
+    </div>
+
+    <!-- Pending SOAP Notes -->
+    <div class="card">
+        <h2>Pending SOAP Notes</h2>
+        {% if pending_soap_notes %}
+            {% for session in pending_soap_notes %}
+            <div style="padding: 0.5rem 0; border-bottom: 1px solid #eee;">
+                <strong>{{ session.student_name }}</strong> - {{ session.session_date }}
+                <div style="margin-top: 0.25rem;">
+                    <a href="/soap/{{ session.id }}" class="btn btn-sm btn-warning">Create SOAP Note</a>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="text-muted">All SOAP notes are up to date! 🎉</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card">
+    <h2>Quick Actions</h2>
+    <div class="grid grid-4">
+        <a href="/students/new" class="btn btn-success">Add New Student</a>
+        <a href="/sessions/new" class="btn">Schedule Session</a>
+        <a href="/sessions?date={{ today }}" class="btn">Today's Sessions</a>
+        <a href="/students" class="btn">View All Students</a>
+    </div>
+</div>
+{% endblock %}

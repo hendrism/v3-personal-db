@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Students - Personal Student Database{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2 class="mb-0">Students</h2>
+        <a href="/students/new" class="btn btn-success">+ Add New Student</a>
+    </div>
+
+    {% if students %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Grade Level</th>
+                    <th>Preferred Name</th>
+                    <th>Pronouns</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                <tr>
+                    <td>
+                        <a href="/students/{{ student.id }}" style="text-decoration: none; color: #3498db; font-weight: 500;">
+                            {{ student.full_name }}
+                        </a>
+                    </td>
+                    <td>{{ student.grade_level or '-' }}</td>
+                    <td>{{ student.preferred_name or '-' }}</td>
+                    <td>{{ student.pronouns or '-' }}</td>
+                    <td>
+                        <a href="/students/{{ student.id }}" class="btn btn-sm">View</a>
+                        <a href="/sessions/new?student_id={{ student.id }}" class="btn btn-sm btn-warning">New Session</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="text-center" style="padding: 3rem;">
+            <p class="text-muted">No students added yet.</p>
+            <a href="/students/new" class="btn btn-success mt-1">Add Your First Student</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
