@@ -69,7 +69,7 @@ def student_detail(student_id):
                          sessions=sessions,
                          goals=goals,
                          recent_trials=recent_trials,
-                         soap_notes=soap_notes
+                         soap_notes=soap_notes,
                          student_schedule=student_schedule,
                          schools=schools)
 
