@@ -3,14 +3,16 @@
 {% block title %}Dashboard - Personal Student Database{% endblock %}
 
 {% block content %}
+<!-- Stats Cards -->
 <div class="stats-grid">
     <div class="stat-card">
         <div class="stat-number">{{ stats.total_students }}</div>
         <div class="stat-label">Active Students</div>
     </div>
     <div class="stat-card">
-        <div class="stat-number">{{ stats.total_schools }}</div>  <!-- ADD THIS -->
+        <div class="stat-number">{{ stats.total_schools }}</div>
         <div class="stat-label">Schools</div>
+    </div>
     <div class="stat-card">
         <div class="stat-number">{{ stats.sessions_this_week }}</div>
         <div class="stat-label">Sessions This Week</div>
@@ -19,13 +21,9 @@
         <div class="stat-number">{{ stats.pending_soap_notes }}</div>
         <div class="stat-label">Pending SOAP Notes</div>
     </div>
-    <div class="stat-card">
-        <div class="stat-number">{{ stats.upcoming_sessions }}</div>
-        <div class="stat-label">Upcoming Sessions</div>
-    </div>
 </div>
 
-<div class="grid grid-2">
+<div class="grid-2">
     <!-- Recent Sessions -->
     <div class="card">
         <h2>Recent Sessions</h2>
@@ -36,7 +34,6 @@
                         <th>Student</th>
                         <th>Date</th>
                         <th>Type</th>
-                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -45,85 +42,117 @@
                         <td>{{ session.student_name }}</td>
                         <td>{{ session.session_date }}</td>
                         <td>{{ session.session_type }}</td>
-                        <td>
-                            <a href="/sessions/{{ session.id }}" class="btn btn-sm">View</a>
-                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+            <div style="text-align: center; margin-top: 1rem;">
+                <a href="/sessions" class="btn">View All Sessions</a>
+            </div>
         {% else %}
-            <p class="text-muted">No recent sessions found.</p>
+            <div style="text-align: center; padding: 2rem;">
+                <p class="text-muted">No recent sessions yet.</p>
+                <a href="/sessions/new" class="btn btn-success">Schedule Your First Session</a>
+            </div>
         {% endif %}
-        <div class="mt-1">
-            <a href="/sessions" class="btn btn-sm">View All Sessions</a>
-        </div>
     </div>
 
-    <!-- Pending SOAP Notes -->
+    <!-- Pending Tasks -->
     <div class="card">
-        <h2>Pending SOAP Notes</h2>
-        {% if pending_soap_notes %}
-            {% for session in pending_soap_notes %}
-            <div style="padding: 0.5rem 0; border-bottom: 1px solid #eee;">
-                <strong>{{ session.student_name }}</strong> - {{ session.session_date }}
-                <div style="margin-top: 0.25rem;">
-                    <a href="/soap/{{ session.id }}" class="btn btn-sm btn-warning">Create SOAP Note</a>
+        <h2>Pending Tasks</h2>
+        <div style="margin-bottom: 1rem;">
+            {% if pending_soap_notes %}
+                <div style="padding: 1rem; background: #fff3cd; border-left: 4px solid #ffc107; margin-bottom: 1rem;">
+                    <strong>{{ pending_soap_notes|length }} SOAP Notes</strong> need to be completed
+                </div>
+            {% endif %}
+            
+            {% if upcoming_sessions %}
+                <div style="padding: 1rem; background: #d1ecf1; border-left: 4px solid #17a2b8; margin-bottom: 1rem;">
+                    <strong>{{ upcoming_sessions|length }} Sessions</strong> scheduled this week
+                </div>
+            {% endif %}
+            
+            {% if not pending_soap_notes and not upcoming_sessions %}
+                <div style="padding: 1rem; background: #d4edda; border-left: 4px solid #28a745;">
+                    <strong>All caught up!</strong> 🎉
+                </div>
+            {% endif %}
+        </div>
+        
+        <div style="text-align: center;">
+            <a href="/sessions" class="btn">View Calendar</a>
+        </div>
+    </div>
+</div>
+
+<!-- Schools & Schedules -->
+<div class="card">
+    <h2>Schools & Schedules</h2>
+    {% if recent_schools %}
+        <div style="margin-bottom: 1rem;">
+            {% for school_info in recent_schools %}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; margin-bottom: 0.5rem; background: #f8f9fa; border-radius: 4px; border-left: 4px solid #3498db;">
+                <div>
+                    <a href="/schools/{{ school_info.school.id }}" style="text-decoration: none; font-weight: 500; color: #3498db;">
+                        {{ school_info.school.name }}
+                    </a>
+                    <div style="font-size: 0.9rem; color: #666; margin-top: 0.25rem;">
+                        {{ school_info.student_count }} student{% if school_info.student_count != 1 %}s{% endif %}
+                        • 
+                        {% if school_info.school.schedule_type == 'thomas_stone' %}
+                            Extension Rotation
+                            {% if school_info.school.current_extension != 'regular' %}
+                                ({{ school_info.school.current_extension|replace('_', ' ')|title }})
+                            {% endif %}
+                        {% else %}
+                            Simple Schedule
+                        {% endif %}
+                    </div>
+                </div>
+                <div>
+                    <a href="/schools/{{ school_info.school.id }}" class="btn btn-sm">View</a>
                 </div>
             </div>
             {% endfor %}
-        {% else %}
-            <p class="text-muted">All SOAP notes are up to date! 🎉</p>
-        {% endif %}
-    </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 1rem;">
+            <a href="/schools" class="btn">View All Schools</a>
+            <a href="/schools/new" class="btn btn-success" style="margin-left: 0.5rem;">+ Add School</a>
+        </div>
+    {% else %}
+        <div style="text-align: center; padding: 2rem;">
+            <p class="text-muted">No schools added yet.</p>
+            <a href="/schools/new" class="btn btn-success mt-1">Add Your First School</a>
+        </div>
+    {% endif %}
 </div>
 
 <!-- Quick Actions -->
 <div class="card">
     <h2>Quick Actions</h2>
-    <div class="grid grid-4">
-        <a href="/students/new" class="btn btn-success">Add New Student</a>
-        <a href="/sessions/new" class="btn">Schedule Session</a>
-        <a href="/sessions?date={{ today }}" class="btn">Today's Sessions</a>
-        <a href="/students" class="btn">View All Students</a>
+    <div class="quick-actions">
+        <a href="/students/new" class="btn btn-success">
+            <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">👥</div>
+            Add New Student
+        </a>
+        <a href="/sessions/new" class="btn">
+            <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">📅</div>
+            Schedule Session
+        </a>
+        <a href="/sessions?date={{ today }}" class="btn">
+            <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">📋</div>
+            Today's Sessions
+        </a>
+        <a href="/students" class="btn">
+            <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">📚</div>
+            View All Students
+        </a>
+        <a href="/schools" class="btn">
+            <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">🏫</div>
+            Manage Schools
+        </a>
     </div>
-
-<div class="card">
-    <h2>Schools & Schedules</h2>
-    {% if recent_schools %}
-    <table>
-        <thead>
-            <tr>
-                <th>School</th>
-                <th>Students</th>
-                <th>Schedule Type</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for school_info in recent_schools %}
-            <tr>
-                <td>
-                    <a href="/schools/{{ school_info.school.id }}">{{ school_info.school.name }}</a>
-                </td>
-                <td>{{ school_info.student_count }}</td>
-                <td>
-                    {% if school_info.school.schedule_type == 'thomas_stone' %}
-                        Extension Rotation
-                    {% else %}
-                        Simple
-                    {% endif %}
-                </td>
-                <td>
-                    <a href="/schools/{{ school_info.school.id }}" class="btn btn-sm">View</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <p class="text-muted">No schools added yet. <a href="/schools/new">Add your first school</a></p>
-    {% endif %}
-</div>
 </div>
 {% endblock %}
