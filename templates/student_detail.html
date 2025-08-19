@@ -60,8 +60,14 @@
                                     <span>{{ goal_data.objectives|length }} objectives</span>
                                 </div>
                             </div>
-                            <a href="{{ url_for('new_objective', goal_id=goal_data.goal.id) }}" 
-                               class="btn btn-sm btn-outline">Add Objective</a>
+                            <div style="display: flex; gap: 8px;">
+                                <a href="{{ url_for('edit_goal', goal_id=goal_data.goal.id) }}" 
+                                   class="btn btn-sm btn-outline">Edit</a>
+                                <a href="{{ url_for('new_objective', goal_id=goal_data.goal.id) }}" 
+                                   class="btn btn-sm btn-outline">Add Objective</a>
+                                <button onclick="deleteGoal({{ goal_data.goal.id }}, '{{ goal_data.goal.description[:50] }}...')" 
+                                        class="btn btn-sm btn-danger">Delete Goal</button>
+                            </div>
                         </div>
                     </div>
                     
@@ -86,8 +92,12 @@
                                             {% endif %}
                                         </div>
                                         <div style="display: flex; gap: 5px;">
+                                            <a href="{{ url_for('edit_objective', objective_id=objective.id) }}" 
+                                               class="btn btn-sm btn-outline">Edit</a>
                                             <button onclick="viewObjectiveProgress({{ objective.id }})" 
                                                     class="btn btn-sm btn-outline">Progress</button>
+                                            <button onclick="deleteObjective({{ objective.id }}, '{{ objective.description[:30] }}...')" 
+                                                    class="btn btn-sm btn-danger">Delete</button>
                                         </div>
                                     </div>
                                 </div>
@@ -244,6 +254,42 @@ function viewObjectiveProgress(objectiveId) {
             alert('Error loading progress data');
         });
 }
+
+function deleteGoal(goalId, goalDescription) {
+    const confirmed = confirm(
+        `⚠️ WARNING: This will permanently delete the goal and ALL its objectives!\n\n` +
+        `Goal: "${goalDescription}"\n\n` +
+        `Are you absolutely sure you want to continue?\n\n` +
+        `This action cannot be undone.`
+    );
+    
+    if (confirmed) {
+        // Create and submit a form for POST request
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/goals/${goalId}/delete`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function deleteObjective(objectiveId, objectiveDescription) {
+    const confirmed = confirm(
+        `⚠️ Are you sure you want to delete this objective?\n\n` +
+        `Objective: "${objectiveDescription}"\n\n` +
+        `This will also delete all trial data for this objective.\n` +
+        `This action cannot be undone.`
+    );
+    
+    if (confirmed) {
+        // Create and submit a form for POST request
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/objectives/${objectiveId}/delete`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
 </script>
 
 <style>
@@ -267,6 +313,18 @@ function viewObjectiveProgress(objectiveId) {
 .badge-danger {
     color: #fff;
     background-color: #dc3545;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+    color: white;
 }
 
 .goal-section {
