@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}{{ school.name }} - Personal Student Database{% endblock %}
+
+{% block content %}
+<!-- School Header -->
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h2 class="mb-0">{{ school.name }}</h2>
+            <p class="text-muted">
+                {% if school.schedule_type == 'thomas_stone' %}Extension Rotation System{% else %}Simple Schedule{% endif %}
+            </p>
+        </div>
+        <div>
+            <a href="/schools" class="btn">Back to Schools</a>
+        </div>
+    </div>
+    
+    <div class="grid grid-2" style="margin-top: 1rem; gap: 2rem;">
+        <div>
+            <h3 style="margin-bottom: 1rem;">Contact Information</h3>
+            <div style="line-height: 1.6;">
+                <strong>Address:</strong><br>
+                {{ school.address or 'Not specified' }}<br><br>
+                <strong>Phone:</strong> {{ school.phone or 'Not specified' }}<br>
+                <strong>Fax:</strong> {{ school.fax or 'Not specified' }}<br>
+                <strong>Hours:</strong> {{ school.hours or 'Not specified' }}
+            </div>
+        </div>
+        
+        <div>
+            <h3 style="margin-bottom: 1rem;">Students at this School</h3>
+            <div style="font-size: 2rem; color: #3498db; font-weight: bold;">
+                {{ students|length }}
+            </div>
+            <div class="text-muted">Active Students</div>
+        </div>
+    </div>
+</div>
+
+<!-- Schedule Management (for Thomas Stone) -->
+{% if school.schedule_type == 'thomas_stone' and schedule %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2 class="mb-0">Today's Schedule</h2>
+        <form method="POST" action="/schools/{{ school.id }}/schedule" style="display: flex; gap: 1rem; align-items: center;">
+            <select name="extension_type" onchange="this.form.submit()">
+                <option value="regular" {% if school.current_extension == 'regular' %}selected{% endif %}>No Extension</option>
+                <option value="extension1" {% if school.current_extension == 'extension1' %}selected{% endif %}>1st Period Extension</option>
+                <option value="extension2" {% if school.current_extension == 'extension2' %}selected{% endif %}>2nd Period Extension</option>
+                <option value="extension3" {% if school.current_extension == 'extension3' %}selected{% endif %}>3rd Period Extension</option>
+                <option value="extension4" {% if school.current_extension == 'extension4' %}selected{% endif %}>4th Period Extension</option>
+                <option value="extension5" {% if school.current_extension == 'extension5' %}selected{% endif %}>5th/6th Period Extension</option>
+                <option value="extension7" {% if school.current_extension == 'extension7' %}selected{% endif %}>7th Period Extension</option>
+                <option value="extension8" {% if school.current_extension == 'extension8' %}selected{% endif %}>8th Period Extension</option>
+                <option value="early_dismissal" {% if school.current_extension == 'early_dismissal' %}selected{% endif %}>Early Dismissal</option>
+            </select>
+        </form>
+    </div>
+    
+    <h3 style="margin-bottom: 1rem;">{{ schedule.name }}</h3>
+    
+    <div class="grid grid-2">
+        <!-- A Lunch Schedule -->
+        <div>
+            <h4 style="margin-bottom: 1rem; color: #3498db;">🔵 A Lunch Schedule</h4>
+            <div style="space-y: 0.5rem;">
+                {% for period in schedule.periods %}
+                    {% if not period.lunch_type or period.lunch_type == 'A' %}
+                    <div class="period-block" style="
+                        display: flex; 
+                        justify-content: space-between; 
+                        padding: 0.75rem; 
+                        margin-bottom: 0.5rem;
+                        border-radius: 4px;
+                        background: {% if period.get('is_lunch') %}#e8f5e8{% elif period.get('is_extension') %}#fff3cd{% else %}#f8f9fa{% endif %};
+                        border-left: 4px solid {% if period.get('is_lunch') %}#28a745{% elif period.get('is_extension') %}#ffc107{% else %}#6c757d{% endif %};
+                    ">
+                        <span>
+                            <strong>Period {{ period.number }}</strong>
+                            {% if period.get('is_lunch') %} (Lunch){% endif %}
+                            {% if period.get('is_extension') %} (Extended){% endif %}
+                        </span>
+                        <span>{{ period.start }} – {{ period.end }}</span>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- B Lunch Schedule -->
+        <div>
+            <h4 style="margin-bottom: 1rem; color: #e74c3c;">🔴 B Lunch Schedule</h4>
+            <div>
+                {% for period in schedule.periods %}
+                    {% if not period.lunch_type or period.lunch_type == 'B' %}
+                    <div class="period-block" style="
+                        display: flex; 
+                        justify-content: space-between; 
+                        padding: 0.75rem; 
+                        margin-bottom: 0.5rem;
+                        border-radius: 4px;
+                        background: {% if period.get('is_lunch') %}#e8f5e8{% elif period.get('is_extension') %}#fff3cd{% else %}#f8f9fa{% endif %};
+                        border-left: 4px solid {% if period.get('is_lunch') %}#28a745{% elif period.get('is_extension') %}#ffc107{% else %}#6c757d{% endif %};
+                    ">
+                        <span>
+                            <strong>Period {{ period.number }}</strong>
+                            {% if period.get('is_lunch') %} (Lunch){% endif %}
+                            {% if period.get('is_extension') %} (Extended){% endif %}
+                        </span>
+                        <span>{{ period.start }} – {{ period.end }}</span>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Students at this School -->
+{% if students %}
+<div class="card">
+    <h2 style="margin-bottom: 1rem;">Student Schedules Today</h2>
+    
+    {% for student in students %}
+    <div style="margin-bottom: 2rem; padding: 1rem; border: 1px solid #ddd; border-radius: 4px;">
+        <h3 style="margin-bottom: 0.5rem;">{{ student.full_name }}</h3>
+        <p style="margin-bottom: 1rem; color: #666;">
+            Lunch: {{ student.lunch_type }}
+            <a href="/students/{{ student.id }}/schedule" style="margin-left: 1rem;" class="btn btn-sm">Edit Schedule</a>
+        </p>
+        
+        {% if student.classes and schedule %}
+        <div class="grid grid-2" style="gap: 0.5rem;">
+            {% for period in schedule.periods %}
+                {% if not period.lunch_type or period.lunch_type == student.lunch_type %}
+                    {% set class_name = student.classes.get(period.number|string, '') %}
+                    {% if class_name or period.get('is_lunch') %}
+                    <div style="
+                        padding: 0.5rem; 
+                        font-size: 0.9rem;
+                        border-radius: 3px;
+                        background: {% if period.get('is_lunch') %}#e8f5e8{% elif period.get('is_extension') and class_name %}#fff3cd{% elif class_name %}#e7f3ff{% else %}#f8f9fa{% endif %};
+                    ">
+                        <strong>P{{ period.number }}:</strong> 
+                        {{ 'Lunch' if period.get('is_lunch') else (class_name or 'Free') }}
+                        <br><small style="color: #666;">{{ period.start }} – {{ period.end }}</small>
+                    </div>
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted">No class schedule entered yet. <a href="/students/{{ student.id }}/schedule">Add schedule</a></p>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card">
+    <div class="text-center" style="padding: 2rem;">
+        <p class="text-muted">No students assigned to this school yet.</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

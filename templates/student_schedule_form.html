@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Schedule for {{ student.display_name }} - Personal Student Database{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Schedule for {{ student.display_name }}</h2>
+    
+    <form method="POST">
+        <div class="grid grid-2">
+            <div class="form-group">
+                <label for="school_id">School *</label>
+                <select id="school_id" name="school_id" required>
+                    <option value="">Select a school</option>
+                    {% for school in schools %}
+                    <option value="{{ school.id }}" {% if schedule and schedule.school_id == school.id %}selected{% endif %}>
+                        {{ school.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="lunch_type">Lunch Period</label>
+                <select id="lunch_type" name="lunch_type">
+                    <option value="A" {% if schedule and schedule.lunch_type == 'A' %}selected{% endif %}>A Lunch</option>
+                    <option value="B" {% if schedule and schedule.lunch_type == 'B' %}selected{% endif %}>B Lunch</option>
+                </select>
+            </div>
+        </div>
+        
+        <div style="margin: 2rem 0;">
+            <h3>Class Schedule</h3>
+            <p class="text-muted">Enter the student's classes for each period.</p>
+        </div>
+        
+        <div class="grid grid-2">
+            {% for period in range(1, 9) %}
+            <div class="form-group">
+                <label for="period_{{ period }}">Period {{ period }}</label>
+                <input type="text" id="period_{{ period }}" name="period_{{ period }}" 
+                       value="{% if schedule and schedule.classes %}{{ schedule.classes.get(period|string, '') }}{% endif %}"
+                       placeholder="e.g., English 9, Algebra I">
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+            <button type="submit" class="btn btn-success">Save Schedule</button>
+            <a href="/students/{{ student.id }}" class="btn">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+// Simple JavaScript to show/hide lunch options based on selected school
+document.getElementById('school_id').addEventListener('change', function() {
+    const schoolId = this.value;
+    // You could add AJAX here to get school details and show/hide lunch options
+    // For now, just show lunch options for all schools
+});
+</script>
+{% endblock %}

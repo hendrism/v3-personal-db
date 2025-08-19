@@ -104,3 +104,48 @@ def init_db():
                 FOREIGN KEY (session_id) REFERENCES sessions (id)
             )
         ''')
+
+         # Schools table
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS schools (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                address TEXT,
+                phone TEXT,
+                fax TEXT,
+                hours TEXT,
+                schedule_type TEXT DEFAULT 'simple',
+                current_extension TEXT DEFAULT 'regular',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        # Student schedules table
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS student_schedules (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                student_id INTEGER NOT NULL,
+                school_id INTEGER NOT NULL,
+                lunch_type TEXT DEFAULT 'A',
+                classes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (student_id) REFERENCES students (id),
+                FOREIGN KEY (school_id) REFERENCES schools (id)
+            )
+        ''')
+        
+        # Create default Thomas Stone High School if it doesn't exist
+        cursor = conn.execute("SELECT COUNT(*) FROM schools WHERE name = 'Thomas Stone High School'")
+        if cursor.fetchone()[0] == 0:
+            conn.execute('''
+                INSERT INTO schools (name, address, phone, fax, hours, schedule_type, current_extension)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                "Thomas Stone High School",
+                "3785 Leonardtown Road, Waldorf, MD 20601",
+                "(301) 934-4410",
+                "(301) 932-6610",
+                "7:15 AM - 2:15 PM",
+                "thomas_stone",
+                "regular"
+            ))

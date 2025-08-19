@@ -26,6 +26,45 @@
     {% endif %}
 </div>
 
+<!-- Student Schedule -->
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 class="mb-0">Class Schedule</h3>
+        <a href="/students/{{ student.id }}/schedule" class="btn btn-sm">
+            {% if student_schedule %}Edit Schedule{% else %}Add Schedule{% endif %}
+        </a>
+    </div>
+    
+    {% if student_schedule and student_schedule.school_id %}
+        {% set school = schools.get(student_schedule.school_id) %}
+        <div style="margin-bottom: 1rem;">
+            <strong>School:</strong> 
+            <a href="/schools/{{ school.id }}">{{ school.name }}</a>
+            <span style="margin-left: 1rem; color: #666;">
+                Lunch: {{ student_schedule.lunch_type }}
+            </span>
+        </div>
+        
+        {% if student_schedule.classes %}
+        <div class="grid grid-4" style="gap: 0.5rem;">
+            {% for period, class_name in student_schedule.classes.items() %}
+            <div style="padding: 0.5rem; background: #f8f9fa; border-radius: 3px; text-align: center;">
+                <div style="font-weight: bold; font-size: 0.9rem;">Period {{ period }}</div>
+                <div style="font-size: 0.8rem; color: #666;">{{ class_name }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted">No classes entered yet.</p>
+        {% endif %}
+    {% else %}
+    <p class="text-muted">
+        No school assigned yet. 
+        <a href="/students/{{ student.id }}/schedule">Assign to a school</a>
+    </p>
+    {% endif %}
+</div>
+
 <div class="grid grid-2">
     <!-- Recent Sessions -->
     <div class="card">

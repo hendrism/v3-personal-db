@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Schools - Personal Student Database{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2 class="mb-0">Schools</h2>
+        <a href="/schools/new" class="btn btn-success">+ Add New School</a>
+    </div>
+
+    {% if schools %}
+        <div class="grid grid-2">
+            {% for school in schools %}
+            <div class="card" style="margin-bottom: 1rem;">
+                <h3 style="margin-bottom: 0.5rem;">
+                    <a href="/schools/{{ school.id }}" style="text-decoration: none; color: #3498db;">
+                        {{ school.name }}
+                    </a>
+                </h3>
+                
+                <div class="grid grid-2" style="gap: 0.5rem; font-size: 0.9rem; color: #666;">
+                    <div>
+                        <strong>Address:</strong><br>
+                        {{ school.address or 'Not specified' }}
+                    </div>
+                    <div>
+                        <strong>Phone:</strong> {{ school.phone or 'Not specified' }}<br>
+                        <strong>Hours:</strong> {{ school.hours or 'Not specified' }}
+                    </div>
+                </div>
+                
+                <div style="margin-top: 1rem;">
+                    <span class="badge" style="background: {% if school.schedule_type == 'thomas_stone' %}#e74c3c{% else %}#3498db{% endif %}; color: white; padding: 0.25rem 0.5rem; border-radius: 3px; font-size: 0.8rem;">
+                        {% if school.schedule_type == 'thomas_stone' %}
+                            Extension Rotation
+                        {% else %}
+                            Simple Schedule
+                        {% endif %}
+                    </span>
+                    
+                    <div style="margin-top: 0.5rem;">
+                        <a href="/schools/{{ school.id }}" class="btn btn-sm">View Details</a>
+                        {% if school.schedule_type == 'thomas_stone' %}
+                            <span style="margin-left: 0.5rem; font-size: 0.9rem; color: #666;">
+                                Current: {{ school.current_extension|replace('_', ' ')|title }}
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center" style="padding: 3rem;">
+            <p class="text-muted">No schools added yet.</p>
+            <a href="/schools/new" class="btn btn-success mt-1">Add Your First School</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

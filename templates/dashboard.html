@@ -9,6 +9,9 @@
         <div class="stat-label">Active Students</div>
     </div>
     <div class="stat-card">
+        <div class="stat-number">{{ stats.total_schools }}</div>  <!-- ADD THIS -->
+        <div class="stat-label">Schools</div>
+    <div class="stat-card">
         <div class="stat-number">{{ stats.sessions_this_week }}</div>
         <div class="stat-label">Sessions This Week</div>
     </div>
@@ -84,5 +87,43 @@
         <a href="/sessions?date={{ today }}" class="btn">Today's Sessions</a>
         <a href="/students" class="btn">View All Students</a>
     </div>
+
+<div class="card">
+    <h2>Schools & Schedules</h2>
+    {% if recent_schools %}
+    <table>
+        <thead>
+            <tr>
+                <th>School</th>
+                <th>Students</th>
+                <th>Schedule Type</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for school_info in recent_schools %}
+            <tr>
+                <td>
+                    <a href="/schools/{{ school_info.school.id }}">{{ school_info.school.name }}</a>
+                </td>
+                <td>{{ school_info.student_count }}</td>
+                <td>
+                    {% if school_info.school.schedule_type == 'thomas_stone' %}
+                        Extension Rotation
+                    {% else %}
+                        Simple
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="/schools/{{ school_info.school.id }}" class="btn btn-sm">View</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="text-muted">No schools added yet. <a href="/schools/new">Add your first school</a></p>
+    {% endif %}
+</div>
 </div>
 {% endblock %}
