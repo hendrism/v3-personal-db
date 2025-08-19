@@ -77,7 +77,7 @@
                                             </h4>
                                             <div style="display: flex; gap: 15px; font-size: 0.85rem; color: #6c757d;">
                                                 <span>Target: {{ objective.target_percentage }}%</span>
-                                                <span>Progress: {{ objective.get_current_progress(get_db()) }}%</span>
+                                                <span>Progress: {{ objective.current_progress }}%</span>
                                             </div>
                                             {% if objective.notes %}
                                                 <p style="margin: 8px 0 0 0; font-size: 0.85rem; color: #6c757d; font-style: italic;">
@@ -149,8 +149,7 @@
                 {% for trial in recent_trials %}
                     <div class="trial-item" style="padding: 10px; margin-bottom: 8px; background: #f8f9fa; border-radius: 4px;">
                         {% if trial.objective_id %}
-                            {% set objective = trial.get_objective(get_db()) %}
-                            <strong>{{ objective.description if objective else 'Unknown Objective' }}</strong>
+                            <strong>{{ trial.objective_description if trial.objective_description else 'Unknown Objective' }}</strong>
                         {% else %}
                             <strong>Trial Data</strong>
                         {% endif %}
