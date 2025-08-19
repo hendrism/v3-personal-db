@@ -400,9 +400,11 @@ Details{% endblock %} {% block content %}
       {% if student_schedule.classes %}
       <h4>Class Schedule:</h4>
       <div class="grid grid-2">
-        {% for period, class_name in student_schedule.classes.items() %}
+        {% for period, class_name in student_schedule.classes|dictsort %}
         <div style="padding: 5px">
           <strong>Period {{ period }}:</strong> {{ class_name }}
+          {% set room = student_schedule.room_numbers.get(period) if student_schedule.room_numbers else '' %}
+          {% if room %}- Room {{ room }}{% endif %}
         </div>
         {% endfor %}
       </div>

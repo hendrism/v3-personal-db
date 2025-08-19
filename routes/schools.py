@@ -18,7 +18,7 @@ def school_detail(school_id):
     if not school:
         return "School not found", 404
     cursor = db.execute('''
-        SELECT s.*, ss.lunch_type, ss.classes
+        SELECT s.*, ss.lunch_type, ss.classes, ss.room_numbers
         FROM students s
         JOIN student_schedules ss ON s.id = ss.student_id
         WHERE ss.school_id = ?
@@ -30,7 +30,8 @@ def school_detail(school_id):
             'id': row['id'],
             'full_name': f"{row['first_name']} {row['last_name']}",
             'lunch_type': row['lunch_type'],
-            'classes': json.loads(row['classes']) if row['classes'] else {}
+            'classes': json.loads(row['classes']) if row['classes'] else {},
+            'room_numbers': json.loads(row['room_numbers']) if row['room_numbers'] else {}
         }
         students.append(student_data)
     schedule = None

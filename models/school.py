@@ -1,5 +1,6 @@
 from datetime import datetime
 import json
+import sqlite3
 
 
 class School:
@@ -101,12 +102,13 @@ class School:
 class StudentSchedule:
     """Link students to schools and track their class schedules."""
     def __init__(self, id=None, student_id=None, school_id=None, lunch_type='A',
-                 classes=None, created_at=None):
+                 classes=None, room_numbers=None, created_at=None):
         self.id = id
         self.student_id = student_id
         self.school_id = school_id
         self.lunch_type = lunch_type
         self.classes = classes or {}
+        self.room_numbers = room_numbers or {}
         self.created_at = created_at or datetime.now()
 
     @classmethod
@@ -119,11 +121,16 @@ class StudentSchedule:
                 school_id INTEGER NOT NULL,
                 lunch_type TEXT DEFAULT 'A',
                 classes TEXT,
+                room_numbers TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (student_id) REFERENCES students (id),
                 FOREIGN KEY (school_id) REFERENCES schools (id)
             )
         ''')
+        try:
+            db.execute('ALTER TABLE student_schedules ADD COLUMN room_numbers TEXT')
+        except sqlite3.OperationalError:
+            pass
         db.commit()
 
     @classmethod
@@ -140,6 +147,7 @@ class StudentSchedule:
             schedule.school_id = row['school_id']
             schedule.lunch_type = row['lunch_type']
             schedule.classes = json.loads(row['classes']) if row['classes'] else {}
+            schedule.room_numbers = json.loads(row['room_numbers']) if row['room_numbers'] else {}
             schedule.created_at = row['created_at']
             return schedule
         return None
@@ -147,18 +155,19 @@ class StudentSchedule:
     def save(self, db):
         """Save schedule to database."""
         classes_json = json.dumps(self.classes)
+        room_numbers_json = json.dumps(self.room_numbers)
 
         if self.id:
             db.execute('''
                 UPDATE student_schedules
-                SET school_id=?, lunch_type=?, classes=?
+                SET school_id=?, lunch_type=?, classes=?, room_numbers=?
                 WHERE id=?
-            ''', (self.school_id, self.lunch_type, classes_json, self.id))
+            ''', (self.school_id, self.lunch_type, classes_json, room_numbers_json, self.id))
         else:
             cursor = db.execute('''
-                INSERT INTO student_schedules (student_id, school_id, lunch_type, classes)
-                VALUES (?, ?, ?, ?)
-            ''', (self.student_id, self.school_id, self.lunch_type, classes_json))
+                INSERT INTO student_schedules (student_id, school_id, lunch_type, classes, room_numbers)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (self.student_id, self.school_id, self.lunch_type, classes_json, room_numbers_json))
             self.id = cursor.lastrowid
         db.commit()
 

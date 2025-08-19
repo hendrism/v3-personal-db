@@ -139,13 +139,17 @@
                     {% set class_name = student.classes.get(period.number|string, '') %}
                     {% if class_name or period.get('is_lunch') %}
                     <div style="
-                        padding: 0.5rem; 
+                        padding: 0.5rem;
                         font-size: 0.9rem;
                         border-radius: 3px;
                         background: {% if period.get('is_lunch') %}#e8f5e8{% elif period.get('is_extension') and class_name %}#fff3cd{% elif class_name %}#e7f3ff{% else %}#f8f9fa{% endif %};
                     ">
-                        <strong>P{{ period.number }}:</strong> 
+                        <strong>P{{ period.number }}:</strong>
                         {{ 'Lunch' if period.get('is_lunch') else (class_name or 'Free') }}
+                        {% if not period.get('is_lunch') %}
+                            {% set room = student.room_numbers.get(period.number|string) %}
+                            {% if room %}<br><small style="color: #666;">Room {{ room }}</small>{% endif %}
+                        {% endif %}
                         <br><small style="color: #666;">{{ period.start }} – {{ period.end }}</small>
                     </div>
                     {% endif %}

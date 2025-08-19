@@ -116,11 +116,16 @@ def student_schedule(student_id):
         schedule.school_id = request.form['school_id']
         schedule.lunch_type = request.form.get('lunch_type', 'A')
         classes = {}
+        room_numbers = {}
         for period in range(1,9):
             class_name = request.form.get(f'period_{period}', '').strip()
+            room_number = request.form.get(f'room_{period}', '').strip()
             if class_name:
                 classes[str(period)] = class_name
+            if room_number:
+                room_numbers[str(period)] = room_number
         schedule.classes = classes
+        schedule.room_numbers = room_numbers
         schedule.save(db)
         return redirect(url_for('students.student_detail', student_id=student_id))
     return render_template('student_schedule_form.html', student=student, schedule=schedule, schools=schools)

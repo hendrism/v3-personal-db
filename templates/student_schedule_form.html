@@ -29,27 +29,24 @@
             </div>
         </div>
 
-        <div class="form-group">
-            <label for="room_number">Room Number</label>
-            <input type="text" id="room_number" name="room_number" 
-                value="{% if schedule and schedule.room_number %}{{ schedule.room_number }}{% endif %}"
-                placeholder="e.g., 205, Main Office, Library">
-            <small class="form-text">Room where student can be found (for facilitator)</small>
-        </div>
-    
-        
         <div style="margin: 2rem 0;">
             <h3>Class Schedule</h3>
             <p class="text-muted">Enter the student's classes for each period.</p>
         </div>
-        
+
         <div class="grid grid-2">
             {% for period in range(1, 9) %}
             <div class="form-group">
-                <label for="period_{{ period }}">Period {{ period }}</label>
-                <input type="text" id="period_{{ period }}" name="period_{{ period }}" 
+                <label for="period_{{ period }}">Period {{ period }} Class</label>
+                <input type="text" id="period_{{ period }}" name="period_{{ period }}"
                        value="{% if schedule and schedule.classes %}{{ schedule.classes.get(period|string, '') }}{% endif %}"
                        placeholder="e.g., English 9, Algebra I">
+            </div>
+            <div class="form-group">
+                <label for="room_{{ period }}">Period {{ period }} Room</label>
+                <input type="text" id="room_{{ period }}" name="room_{{ period }}"
+                       value="{% if schedule and schedule.room_numbers %}{{ schedule.room_numbers.get(period|string, '') }}{% endif %}"
+                       placeholder="e.g., 205, Main Office">
             </div>
             {% endfor %}
         </div>
