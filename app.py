@@ -1,10 +1,7 @@
-# V3 Personal Database - Basic Structure
-# Simple, local-only student database for personal organization
-
-# app.py - Main Flask application
+# app.py - Enhanced with Objectives Support (keeping all existing functionality)
 from flask import Flask, render_template, request, jsonify, redirect, url_for
-from database import init_db, get_db
-from models import Student, Session, Goal, TrialLog, SOAPNote, School, StudentSchedule, get_thomas_stone_schedule
+from database import init_db, get_db, add_sample_data
+from models import Student, Session, Goal, Objective, TrialLog, SOAPNote, School, StudentSchedule, get_thomas_stone_schedule
 import json
 from datetime import datetime, date
 import os
@@ -27,7 +24,7 @@ def dashboard():
     pending_soap_notes = Session.get_pending_soap_notes(db)
     upcoming_sessions = Session.get_upcoming(db, days=7)
     
-    # ADD SCHOOL DATA - This was missing!
+    # School data
     schools = School.get_all(db)
     recent_schools = []
     for school in schools[:3]:  # Show top 3 schools
@@ -41,7 +38,7 @@ def dashboard():
     
     stats = {
         'total_students': len(active_students),
-        'total_schools': len(schools),  # This might have been missing
+        'total_schools': len(schools),
         'sessions_this_week': len([s for s in recent_sessions if s.this_week()]),
         'pending_soap_notes': len(pending_soap_notes),
         'upcoming_sessions': len(upcoming_sessions)
@@ -52,7 +49,7 @@ def dashboard():
                          recent_sessions=recent_sessions,
                          pending_soap_notes=pending_soap_notes,
                          upcoming_sessions=upcoming_sessions,
-                         recent_schools=recent_schools)  # ADD THIS LINE
+                         recent_schools=recent_schools)
 
 # Students
 @app.route('/students')
@@ -64,7 +61,7 @@ def students():
 
 @app.route('/students/<int:student_id>')
 def student_detail(student_id):
-    """Individual student view - everything in one place."""
+    """Individual student view with goals and objectives."""
     db = get_db()
     student = Student.get_by_id(db, student_id)
     if not student:
@@ -73,6 +70,17 @@ def student_detail(student_id):
     # Get all related data
     sessions = Session.get_by_student(db, student_id)
     goals = Goal.get_by_student(db, student_id)
+    
+    # Enhanced: Get goals with their objectives
+    goals_with_objectives = []
+    for goal in goals:
+        objectives = goal.get_objectives(db)
+        goals_with_objectives.append({
+            'goal': goal,
+            'objectives': objectives,
+            'progress': goal.get_current_progress(db)
+        })
+    
     recent_trials = TrialLog.get_recent_by_student(db, student_id, limit=10)
     soap_notes = SOAPNote.get_by_student(db, student_id)
     student_schedule = StudentSchedule.get_by_student(db, student_id)
@@ -81,7 +89,8 @@ def student_detail(student_id):
     return render_template('student_detail.html',
                          student=student,
                          sessions=sessions,
-                         goals=goals,
+                         goals=goals,  # Keep for backward compatibility
+                         goals_with_objectives=goals_with_objectives,  # New enhanced data
                          recent_trials=recent_trials,
                          soap_notes=soap_notes,
                          student_schedule=student_schedule,
@@ -105,6 +114,50 @@ def new_student():
     
     return render_template('student_form.html')
 
+# Goals and Objectives (NEW ROUTES)
+@app.route('/students/<int:student_id>/goals/new', methods=['GET', 'POST'])
+def new_goal(student_id):
+    """Add new goal for student."""
+    db = get_db()
+    student = Student.get_by_id(db, student_id)
+    if not student:
+        return "Student not found", 404
+    
+    if request.method == 'POST':
+        goal_data = {
+            'student_id': student_id,
+            'description': request.form['description'],
+            'target_accuracy': int(request.form.get('target_accuracy', 80))
+        }
+        
+        goal = Goal.create(db, goal_data)
+        return redirect(url_for('student_detail', student_id=student_id))
+    
+    return render_template('goal_form.html', student=student)
+
+@app.route('/goals/<int:goal_id>/objectives/new', methods=['GET', 'POST'])
+def new_objective(goal_id):
+    """Add new objective to a goal."""
+    db = get_db()
+    goal = Goal.get_by_id(db, goal_id)
+    if not goal:
+        return "Goal not found", 404
+    
+    student = Student.get_by_id(db, goal.student_id)
+    
+    if request.method == 'POST':
+        objective_data = {
+            'goal_id': goal_id,
+            'description': request.form['description'],
+            'target_percentage': int(request.form.get('target_percentage', 80)),
+            'notes': request.form.get('notes', '')
+        }
+        
+        objective = Objective.create(db, objective_data)
+        return redirect(url_for('student_detail', student_id=goal.student_id))
+    
+    return render_template('objective_form.html', goal=goal, student=student)
+
 # Sessions
 @app.route('/sessions')
 def sessions():
@@ -116,9 +169,7 @@ def sessions():
     else:
         sessions = Session.get_recent_with_student_info(db, limit=20)
     
-    from datetime import date
     today = date.today().isoformat()
-    
     return render_template('sessions.html', sessions=sessions, today=today)
 
 @app.route('/sessions/new', methods=['GET', 'POST'])
@@ -143,32 +194,48 @@ def new_session():
 
 @app.route('/sessions/<int:session_id>')
 def session_detail(session_id):
-    """Session detail with trial entry and SOAP notes."""
+    """Enhanced session detail with objective-based trial entry."""
     db = get_db()
     session = Session.get_by_id(db, session_id)
     if not session:
         return "Session not found", 404
     
     student = Student.get_by_id(db, session.student_id)
+    
+    # Get goals and objectives for this student
     goals = Goal.get_by_student(db, session.student_id)
+    goals_with_objectives = []
+    all_objectives = []
+    
+    for goal in goals:
+        objectives = goal.get_objectives(db)
+        goals_with_objectives.append({
+            'goal': goal,
+            'objectives': objectives
+        })
+        all_objectives.extend(objectives)
+    
     trial_logs = TrialLog.get_by_session(db, session_id)
     soap_note = SOAPNote.get_by_session(db, session_id)
     
     return render_template('session_detail.html',
                          session=session,
                          student=student,
-                         goals=goals,
+                         goals=goals,  # Keep for backward compatibility
+                         goals_with_objectives=goals_with_objectives,
+                         all_objectives=all_objectives,
                          trial_logs=trial_logs,
                          soap_note=soap_note)
 
-# Trial Data Entry
+# Enhanced Trial Data Entry
 @app.route('/trials/new', methods=['POST'])
 def add_trial():
-    """Quick trial data entry."""
+    """Enhanced trial data entry with objective support."""
     db = get_db()
     trial_data = {
         'session_id': request.form['session_id'],
-        'goal_id': request.form.get('goal_id'),
+        'objective_id': request.form.get('objective_id'),  # NEW: Link to objective
+        'goal_id': request.form.get('goal_id'),  # Keep for backward compatibility
         'independent': int(request.form.get('independent', 0)),
         'minimal_support': int(request.form.get('minimal_support', 0)),
         'moderate_support': int(request.form.get('moderate_support', 0)),
@@ -179,6 +246,34 @@ def add_trial():
     
     trial = TrialLog.create(db, trial_data)
     return jsonify(trial.to_dict())
+
+@app.route('/trials/<int:trial_id>/edit', methods=['POST'])
+def edit_trial(trial_id):
+    """Edit existing trial data."""
+    db = get_db()
+    trial = TrialLog.get_by_id(db, trial_id)
+    if not trial:
+        return jsonify({'error': 'Trial not found'}), 404
+    
+    # Update trial data
+    cursor = db.execute('''
+        UPDATE trial_logs 
+        SET independent = ?, minimal_support = ?, moderate_support = ?, 
+            maximal_support = ?, incorrect = ?, notes = ?
+        WHERE id = ?
+    ''', (
+        int(request.form.get('independent', 0)),
+        int(request.form.get('minimal_support', 0)),
+        int(request.form.get('moderate_support', 0)),
+        int(request.form.get('maximal_support', 0)),
+        int(request.form.get('incorrect', 0)),
+        request.form.get('notes', ''),
+        trial_id
+    ))
+    
+    db.commit()
+    updated_trial = TrialLog.get_by_id(db, trial_id)
+    return jsonify(updated_trial.to_dict())
 
 # SOAP Notes
 @app.route('/soap/<int:session_id>')
@@ -211,29 +306,7 @@ def save_soap_note():
     soap_note = SOAPNote.create_or_update(db, soap_data)
     return jsonify({'success': True, 'id': soap_note.id})
 
-# API endpoints for quick data access
-@app.route('/api/students')
-def api_students():
-    """Simple API for student list."""
-    db = get_db()
-    students = Student.get_all(db)
-    return jsonify([s.to_dict() for s in students])
-
-@app.route('/api/sessions/today')
-def api_todays_sessions():
-    """Today's sessions."""
-    db = get_db()
-    today = date.today()
-    sessions = Session.get_by_date(db, today)
-    return jsonify([s.to_dict() for s in sessions])
-
-@app.route('/api/goals/<int:student_id>')
-def api_student_goals(student_id):
-    """Student's goals for trial entry."""
-    db = get_db()
-    goals = Goal.get_by_student(db, student_id)
-    return jsonify([g.to_dict() for g in goals])
-
+# School Management Routes
 @app.route('/schools')
 def schools():
     db = get_db()
@@ -338,6 +411,75 @@ def student_schedule(student_id):
                          student=student, 
                          schedule=schedule,
                          schools=schools)
+
+# API endpoints for dynamic objective selection and existing functionality
+@app.route('/api/students/<int:student_id>/objectives')
+def api_student_objectives(student_id):
+    """Get all objectives for a student (for dynamic selection)."""
+    db = get_db()
+    objectives = Objective.get_by_student(db, student_id)
+    
+    # Include goal information
+    objectives_data = []
+    for obj in objectives:
+        goal = obj.get_goal(db)
+        objectives_data.append({
+            'id': obj.id,
+            'description': obj.description,
+            'target_percentage': obj.target_percentage,
+            'goal_description': goal.description if goal else '',
+            'current_progress': obj.get_current_progress(db)
+        })
+    
+    return jsonify(objectives_data)
+
+@app.route('/api/objectives/<int:objective_id>/progress')
+def api_objective_progress(objective_id):
+    """Get detailed progress for an objective."""
+    db = get_db()
+    objective = Objective.get_by_id(db, objective_id)
+    if not objective:
+        return jsonify({'error': 'Objective not found'}), 404
+    
+    recent_trials = objective.get_trial_logs(db, limit=10)
+    
+    return jsonify({
+        'objective': objective.to_dict(),
+        'current_progress': objective.get_current_progress(db),
+        'recent_trials': [trial.to_dict() for trial in recent_trials]
+    })
+
+@app.route('/api/students')
+def api_students():
+    """Simple API for student list."""
+    db = get_db()
+    students = Student.get_all(db)
+    return jsonify([s.to_dict() for s in students])
+
+@app.route('/api/sessions/today')
+def api_todays_sessions():
+    """Today's sessions."""
+    db = get_db()
+    today = date.today()
+    sessions = Session.get_by_date(db, today)
+    return jsonify([s.to_dict() for s in sessions])
+
+@app.route('/api/goals/<int:student_id>')
+def api_student_goals(student_id):
+    """Student's goals for trial entry."""
+    db = get_db()
+    goals = Goal.get_by_student(db, student_id)
+    return jsonify([g.to_dict() for g in goals])
+
+# Utility route for adding sample data
+@app.route('/admin/add-sample-data')
+def admin_add_sample_data():
+    """Add sample data for testing."""
+    try:
+        add_sample_data()
+        return jsonify({'success': True, 'message': 'Sample data added successfully!'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
     # Create data directory if it doesn't exist

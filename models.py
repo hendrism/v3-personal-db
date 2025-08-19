@@ -1,3 +1,4 @@
+# models.py - Enhanced with Objectives (keeping your existing enhancements)
 from datetime import datetime, date, timedelta
 import sqlite3
 import inspect
@@ -108,6 +109,19 @@ class Goal(BaseModel):
         cursor = db.execute("SELECT * FROM goals WHERE student_id = ? AND active = 1", (student_id,))
         return [cls.from_row(row) for row in cursor.fetchall()]
     
+    def get_objectives(self, db):
+        """Get all objectives for this goal."""
+        return Objective.get_by_goal(db, self.id)
+    
+    def get_current_progress(self, db):
+        """Calculate current progress for this goal based on all objectives."""
+        objectives = self.get_objectives(db)
+        if not objectives:
+            return 0
+        
+        total_progress = sum(obj.get_current_progress(db) for obj in objectives)
+        return round(total_progress / len(objectives), 1)
+    
     @classmethod
     def create(cls, db, data):
         cursor = db.execute('''
@@ -118,6 +132,188 @@ class Goal(BaseModel):
         goal_id = cursor.lastrowid
         db.commit()
         return cls.get_by_id(db, goal_id)
+
+class Objective(BaseModel):
+    """NEW: Objectives belong to goals."""
+    table_name = 'objectives'
+    
+    def __init__(self, id=None, goal_id=None, description='', target_percentage=80, 
+                 notes='', active=True, created_at=None):
+        self.id = id
+        self.goal_id = goal_id
+        self.description = description
+        self.target_percentage = target_percentage
+        self.notes = notes
+        self.active = active
+        self.created_at = created_at
+    
+    @classmethod
+    def get_by_goal(cls, db, goal_id):
+        """Get all objectives for a specific goal."""
+        cursor = db.execute("SELECT * FROM objectives WHERE goal_id = ? AND active = 1", (goal_id,))
+        return [cls.from_row(row) for row in cursor.fetchall()]
+    
+    @classmethod
+    def get_by_student(cls, db, student_id):
+        """Get all objectives for a student (across all goals)."""
+        cursor = db.execute('''
+            SELECT o.* FROM objectives o
+            JOIN goals g ON o.goal_id = g.id
+            WHERE g.student_id = ? AND o.active = 1 AND g.active = 1
+            ORDER BY g.id, o.id
+        ''', (student_id,))
+        return [cls.from_row(row) for row in cursor.fetchall()]
+    
+    def get_goal(self, db):
+        """Get the goal this objective belongs to."""
+        return Goal.get_by_id(db, self.goal_id)
+    
+    def get_current_progress(self, db):
+        """Calculate current progress percentage based on recent trial logs."""
+        # Get trial logs from last 30 days
+        cursor = db.execute('''
+            SELECT independent, minimal_support, moderate_support, maximal_support, incorrect
+            FROM trial_logs tl
+            JOIN sessions s ON tl.session_id = s.id
+            WHERE tl.objective_id = ? AND s.session_date >= date('now', '-30 days')
+        ''', (self.id,))
+        
+        trials = cursor.fetchall()
+        if not trials:
+            return 0
+        
+        total_trials = 0
+        total_independent = 0
+        
+        for trial in trials:
+            trial_total = sum(trial)
+            total_trials += trial_total
+            total_independent += trial[0]  # independent is first column
+        
+        if total_trials == 0:
+            return 0
+        
+        return round((total_independent / total_trials) * 100, 1)
+    
+    def get_trial_logs(self, db, limit=None):
+        """Get recent trial logs for this objective."""
+        query = '''
+            SELECT tl.* FROM trial_logs tl
+            JOIN sessions s ON tl.session_id = s.id
+            WHERE tl.objective_id = ?
+            ORDER BY s.session_date DESC, tl.created_at DESC
+        '''
+        params = [self.id]
+        
+        if limit:
+            query += " LIMIT ?"
+            params.append(limit)
+        
+        cursor = db.execute(query, params)
+        return [TrialLog.from_row(row) for row in cursor.fetchall()]
+    
+    @classmethod
+    def create(cls, db, data):
+        cursor = db.execute('''
+            INSERT INTO objectives (goal_id, description, target_percentage, notes)
+            VALUES (?, ?, ?, ?)
+        ''', (data['goal_id'], data['description'], 
+              data.get('target_percentage', 80), data.get('notes', '')))
+        
+        objective_id = cursor.lastrowid
+        db.commit()
+        return cls.get_by_id(db, objective_id)
+
+class Objective(BaseModel):
+    """NEW: Objectives belong to goals."""
+    table_name = 'objectives'
+    
+    def __init__(self, id=None, goal_id=None, description='', target_percentage=80, 
+                 notes='', active=True, created_at=None):
+        self.id = id
+        self.goal_id = goal_id
+        self.description = description
+        self.target_percentage = target_percentage
+        self.notes = notes
+        self.active = active
+        self.created_at = created_at
+    
+    @classmethod
+    def get_by_goal(cls, db, goal_id):
+        """Get all objectives for a specific goal."""
+        cursor = db.execute("SELECT * FROM objectives WHERE goal_id = ? AND active = 1", (goal_id,))
+        return [cls.from_row(row) for row in cursor.fetchall()]
+    
+    @classmethod
+    def get_by_student(cls, db, student_id):
+        """Get all objectives for a student (across all goals)."""
+        cursor = db.execute('''
+            SELECT o.* FROM objectives o
+            JOIN goals g ON o.goal_id = g.id
+            WHERE g.student_id = ? AND o.active = 1 AND g.active = 1
+            ORDER BY g.id, o.id
+        ''', (student_id,))
+        return [cls.from_row(row) for row in cursor.fetchall()]
+    
+    def get_goal(self, db):
+        """Get the goal this objective belongs to."""
+        return Goal.get_by_id(db, self.goal_id)
+    
+    def get_current_progress(self, db):
+        """Calculate current progress percentage based on recent trial logs."""
+        # Get trial logs from last 30 days
+        cursor = db.execute('''
+            SELECT independent, minimal_support, moderate_support, maximal_support, incorrect
+            FROM trial_logs tl
+            JOIN sessions s ON tl.session_id = s.id
+            WHERE tl.objective_id = ? AND s.session_date >= date('now', '-30 days')
+        ''', (self.id,))
+        
+        trials = cursor.fetchall()
+        if not trials:
+            return 0
+        
+        total_trials = 0
+        total_independent = 0
+        
+        for trial in trials:
+            trial_total = sum(trial)
+            total_trials += trial_total
+            total_independent += trial[0]  # independent is first column
+        
+        if total_trials == 0:
+            return 0
+        
+        return round((total_independent / total_trials) * 100, 1)
+    
+    def get_trial_logs(self, db, limit=None):
+        """Get recent trial logs for this objective."""
+        query = '''
+            SELECT tl.* FROM trial_logs tl
+            JOIN sessions s ON tl.session_id = s.id
+            WHERE tl.objective_id = ?
+            ORDER BY s.session_date DESC, tl.created_at DESC
+        '''
+        params = [self.id]
+        
+        if limit:
+            query += " LIMIT ?"
+            params.append(limit)
+        
+        cursor = db.execute(query, params)
+        return [TrialLog.from_row(row) for row in cursor.fetchall()]
+    
+    @classmethod
+    def create(cls, db, data):
+        cursor = db.execute('''
+            INSERT INTO objectives (goal_id, description, target_percentage, notes)
+            VALUES (?, ?, ?, ?)
+        ''', (data['goal_id'], data['description'], 
+              data.get('target_percentage', 80), data.get('notes', '')))
+        
+        objective_id = cursor.lastrowid
+        db.commit()
+        return cls.get_by_id(db, objective_id)
 
 class Session(BaseModel):
     table_name = 'sessions'
@@ -140,70 +336,39 @@ class Session(BaseModel):
         """Check if session is this week."""
         if not self.session_date:
             return False
-        session_date = datetime.strptime(self.session_date, '%Y-%m-%d').date()
+        
+        if isinstance(self.session_date, str):
+            session_date = datetime.strptime(self.session_date, '%Y-%m-%d').date()
+        else:
+            session_date = self.session_date
+        
         today = date.today()
-        week_start = today - timedelta(days=today.weekday())
-        week_end = week_start + timedelta(days=6)
-        return week_start <= session_date <= week_end
+        start_of_week = today - timedelta(days=today.weekday())
+        end_of_week = start_of_week + timedelta(days=6)
+        
+        return start_of_week <= session_date <= end_of_week
+    
+    def get_student(self, db):
+        """Get the student for this session."""
+        return Student.get_by_id(db, self.student_id)
+    
+    def get_trial_logs(self, db):
+        """Get all trial logs for this session."""
+        return TrialLog.get_by_session(db, self.id)
     
     @classmethod
     def get_recent(cls, db, limit=10):
-        cursor = db.execute('''
-            SELECT s.*, st.first_name, st.last_name 
-            FROM sessions s 
-            JOIN students st ON s.student_id = st.id 
-            ORDER BY s.session_date DESC, s.created_at DESC 
-            LIMIT ?
-        ''', (limit,))
-        
-        sessions = []
-        for row in cursor.fetchall():
-            session = cls.from_row(row)
-            session.student_name = f"{row['first_name']} {row['last_name']}"
-            sessions.append(session)
-        return sessions
+        cursor = db.execute("SELECT * FROM sessions ORDER BY session_date DESC, created_at DESC LIMIT ?", (limit,))
+        return [cls.from_row(row) for row in cursor.fetchall()]
     
     @classmethod
-    def get_recent_with_student_info(cls, db, limit=20):
-        """Get recent sessions with student names and SOAP note status."""
+    def get_upcoming(cls, db, days=7):
         cursor = db.execute('''
-            SELECT s.*, st.first_name, st.last_name,
-                   CASE WHEN sn.id IS NOT NULL THEN 1 ELSE 0 END as has_soap_note
-            FROM sessions s 
-            JOIN students st ON s.student_id = st.id 
-            LEFT JOIN soap_notes sn ON s.id = sn.session_id
-            ORDER BY s.session_date DESC, s.created_at DESC 
-            LIMIT ?
-        ''', (limit,))
-        
-        sessions = []
-        for row in cursor.fetchall():
-            session = cls.from_row(row)
-            session.student_name = f"{row['first_name']} {row['last_name']}"
-            session.has_soap_note = bool(row['has_soap_note'])
-            sessions.append(session)
-        return sessions
-    
-    @classmethod
-    def get_by_date_with_student_info(cls, db, date_str):
-        """Get sessions by date with student names and SOAP note status."""
-        cursor = db.execute('''
-            SELECT s.*, st.first_name, st.last_name,
-                   CASE WHEN sn.id IS NOT NULL THEN 1 ELSE 0 END as has_soap_note
-            FROM sessions s 
-            JOIN students st ON s.student_id = st.id 
-            LEFT JOIN soap_notes sn ON s.id = sn.session_id
-            WHERE s.session_date = ?
-            ORDER BY s.start_time, s.created_at
-        ''', (date_str,))
-        
-        sessions = []
-        for row in cursor.fetchall():
-            session = cls.from_row(row)
-            session.student_name = f"{row['first_name']} {row['last_name']}"
-            session.has_soap_note = bool(row['has_soap_note'])
-            sessions.append(session)
-        return sessions
+            SELECT * FROM sessions 
+            WHERE session_date BETWEEN date('now') AND date('now', '+{} days')
+            ORDER BY session_date ASC
+        '''.format(days))
+        return [cls.from_row(row) for row in cursor.fetchall()]
     
     @classmethod
     def get_by_student(cls, db, student_id):
@@ -211,32 +376,9 @@ class Session(BaseModel):
         return [cls.from_row(row) for row in cursor.fetchall()]
     
     @classmethod
-    def get_by_date(cls, db, date_str):
-        cursor = db.execute('''
-            SELECT s.*, st.first_name, st.last_name 
-            FROM sessions s 
-            JOIN students st ON s.student_id = st.id 
-            WHERE s.session_date = ?
-            ORDER BY s.start_time, s.created_at
-        ''', (date_str,))
-        
-        sessions = []
-        for row in cursor.fetchall():
-            session = cls.from_row(row)
-            session.student_name = f"{row['first_name']} {row['last_name']}"
-            sessions.append(session)
-        return sessions
-    
-    @classmethod
-    def get_upcoming(cls, db, days=7):
-        end_date = (date.today() + timedelta(days=days)).isoformat()
-        cursor = db.execute("SELECT * FROM sessions WHERE session_date >= date('now') AND session_date <= ?", (end_date,))
-        return [cls.from_row(row) for row in cursor.fetchall()]
-    
-    @classmethod
     def get_pending_soap_notes(cls, db):
         cursor = db.execute('''
-            SELECT s.* FROM sessions s 
+            SELECT * FROM sessions s 
             LEFT JOIN soap_notes sn ON s.id = sn.session_id 
             WHERE sn.id IS NULL AND s.status = 'Completed'
             ORDER BY s.session_date DESC
@@ -258,14 +400,16 @@ class Session(BaseModel):
         return cls.get_by_id(db, session_id)
 
 class TrialLog(BaseModel):
+    """Enhanced trial log - now links to objectives."""
     table_name = 'trial_logs'
     
-    def __init__(self, id=None, session_id=None, goal_id=None, independent=0, 
-                 minimal_support=0, moderate_support=0, maximal_support=0, 
+    def __init__(self, id=None, session_id=None, objective_id=None, goal_id=None, 
+                 independent=0, minimal_support=0, moderate_support=0, maximal_support=0, 
                  incorrect=0, notes='', created_at=None):
         self.id = id
         self.session_id = session_id
-        self.goal_id = goal_id
+        self.objective_id = objective_id
+        self.goal_id = goal_id  # Keep for backward compatibility
         self.independent = independent or 0
         self.minimal_support = minimal_support or 0
         self.moderate_support = moderate_support or 0
@@ -291,6 +435,25 @@ class TrialLog(BaseModel):
                      self.moderate_support + self.maximal_support)
         return round((successful / total) * 100, 1) if total > 0 else 0
     
+    def get_objective(self, db):
+        """Get the objective this trial log is for."""
+        if self.objective_id:
+            return Objective.get_by_id(db, self.objective_id)
+        return None
+    
+    def get_goal(self, db):
+        """Get the goal (either directly or through objective)."""
+        if self.objective_id:
+            objective = self.get_objective(db)
+            return objective.get_goal(db) if objective else None
+        elif self.goal_id:
+            return Goal.get_by_id(db, self.goal_id)
+        return None
+    
+    def get_session(self, db):
+        """Get the session this trial log belongs to."""
+        return Session.get_by_id(db, self.session_id)
+    
     @classmethod
     def get_by_session(cls, db, session_id):
         cursor = db.execute("SELECT * FROM trial_logs WHERE session_id = ?", (session_id,))
@@ -308,14 +471,34 @@ class TrialLog(BaseModel):
         return [cls.from_row(row) for row in cursor.fetchall()]
     
     @classmethod
+    def get_by_objective(cls, db, objective_id, limit=None):
+        """Get trial logs for a specific objective."""
+        query = '''
+            SELECT tl.* FROM trial_logs tl
+            JOIN sessions s ON tl.session_id = s.id
+            WHERE tl.objective_id = ?
+            ORDER BY s.session_date DESC, tl.created_at DESC
+        '''
+        params = [objective_id]
+        
+        if limit:
+            query += " LIMIT ?"
+            params.append(limit)
+        
+        cursor = db.execute(query, params)
+        return [cls.from_row(row) for row in cursor.fetchall()]
+    
+    @classmethod
     def create(cls, db, data):
         cursor = db.execute('''
-            INSERT INTO trial_logs (session_id, goal_id, independent, minimal_support, 
-                                  moderate_support, maximal_support, incorrect, notes)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (data['session_id'], data.get('goal_id'), data['independent'],
-              data['minimal_support'], data['moderate_support'], 
-              data['maximal_support'], data['incorrect'], data.get('notes')))
+            INSERT INTO trial_logs (session_id, objective_id, goal_id, independent, 
+                                  minimal_support, moderate_support, maximal_support, 
+                                  incorrect, notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (data['session_id'], data.get('objective_id'), data.get('goal_id'),
+              data.get('independent', 0), data.get('minimal_support', 0),
+              data.get('moderate_support', 0), data.get('maximal_support', 0),
+              data.get('incorrect', 0), data.get('notes', '')))
         
         trial_id = cursor.lastrowid
         db.commit()
@@ -335,6 +518,9 @@ class SOAPNote(BaseModel):
         self.created_at = created_at
         self.updated_at = updated_at
     
+    def get_session(self, db):
+        return Session.get_by_id(db, self.session_id)
+    
     @classmethod
     def get_by_session(cls, db, session_id):
         cursor = db.execute("SELECT * FROM soap_notes WHERE session_id = ?", (session_id,))
@@ -344,9 +530,9 @@ class SOAPNote(BaseModel):
     @classmethod
     def get_by_student(cls, db, student_id):
         cursor = db.execute('''
-            SELECT sn.* FROM soap_notes sn 
-            JOIN sessions s ON sn.session_id = s.id 
-            WHERE s.student_id = ? 
+            SELECT sn.* FROM soap_notes sn
+            JOIN sessions s ON sn.session_id = s.id
+            WHERE s.student_id = ?
             ORDER BY s.session_date DESC
         ''', (student_id,))
         return [cls.from_row(row) for row in cursor.fetchall()]
@@ -362,7 +548,12 @@ class SOAPNote(BaseModel):
         
         objective = "Trial data collected:\n"
         for trial in trials:
-            objective += f"- {trial.total_trials} trials, {trial.independence_percentage}% independence\n"
+            if trial.objective_id:
+                objective_obj = trial.get_objective(db)
+                if objective_obj:
+                    objective += f"- {objective_obj.description}: {trial.independence_percentage}% independent\n"
+            else:
+                objective += f"- {trial.total_trials} trials, {trial.independence_percentage}% independence\n"
         
         assessment = f"Student demonstrated varying levels of support needs across targeted skills."
         
@@ -401,7 +592,7 @@ class SOAPNote(BaseModel):
             soap_id = cursor.lastrowid
             db.commit()
             return cls.get_by_id(db, soap_id)
-        
+
 class School:
     def __init__(self, id=None, name=None, address=None, phone=None, fax=None, 
                  hours=None, schedule_type='simple', current_extension='regular', 
