@@ -104,19 +104,19 @@ Details{% endblock %} {% block content %}
           <div style="display: flex; gap: 8px">
             <a
               href="{{ url_for('students.edit_goal', goal_id=goal_data.goal.id) }}"
-              class="btn btn-sm btn-outline"
-              >Edit</a
+              class="btn btn-sm btn-warning"
+              >✏️ Edit</a
             >
             <a
               href="{{ url_for('students.new_objective', goal_id=goal_data.goal.id) }}"
-              class="btn btn-sm btn-outline"
-              >Add Objective</a
+              class="btn btn-sm btn-info"
+              >🎯 Add Objective</a
             >
             <button
               onclick="deleteGoal({{ goal_data.goal.id }}, '{{ goal_data.goal.description[:50] }}...')"
               class="btn btn-sm btn-danger"
             >
-              Delete Goal
+              🗑️ Delete Goal
             </button>
           </div>
         </div>
@@ -174,20 +174,20 @@ Details{% endblock %} {% block content %}
             <div style="display: flex; gap: 5px">
               <a
                 href="{{ url_for('students.edit_objective', objective_id=objective.id) }}"
-                class="btn btn-sm btn-outline"
-                >Edit</a
+                class="btn btn-sm btn-warning"
+                >✏️ Edit</a
               >
               <button
                 onclick="viewObjectiveProgress({{ objective.id }})"
                 class="btn btn-sm btn-outline"
               >
-                Progress
+                📊 Progress
               </button>
               <button
                 onclick="deleteObjective({{ objective.id }}, '{{ objective.description[:30] }}...')"
                 class="btn btn-sm btn-danger"
               >
-                Delete
+                🗑️ Delete
               </button>
             </div>
           </div>
@@ -195,7 +195,8 @@ Details{% endblock %} {% block content %}
         {% endfor %} {% else %}
         <p class="text-muted" style="margin: 0">
           No objectives yet.
-          <a href="{{ url_for('students.new_objective', goal_id=goal_data.goal.id) }}"
+          <a
+            href="{{ url_for('students.new_objective', goal_id=goal_data.goal.id) }}"
             >Add the first objective</a
           >
         </p>
@@ -539,6 +540,54 @@ Details{% endblock %} {% block content %}
 
   .objective-item:hover {
     background-color: #f8f9fa !important;
+  }
+
+  .btn-info {
+    background-color: #17a2b8;
+    border-color: #17a2b8;
+    color: white;
+  }
+
+  .btn-info:hover {
+    background-color: #138496;
+    border-color: #117a8b;
+    color: white;
+  }
+
+  /* Enhanced goal sections */
+  .goal-section {
+    transition: all 0.2s;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 25px;
+  }
+
+  .goal-section:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+  }
+
+  .goal-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 15px;
+    border-bottom: 1px solid #dee2e6;
+  }
+
+  .objective-item {
+    transition: all 0.2s;
+    padding: 12px;
+    margin-bottom: 10px;
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    border-left: 3px solid #17a2b8;
+  }
+
+  .objective-item:hover {
+    background-color: #f8feff !important;
+    border-left-color: #138496;
+    transform: translateX(2px);
   }
 </style>
 {% endblock %}

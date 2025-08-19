@@ -1,40 +1,102 @@
 {% extends "base.html" %}
 
-{% block title %}Add Objective - {{ goal.description[:30] }}...{% endblock %}
+{% block title %}
+{% if edit_mode %}Edit Objective{% else %}Add Objective{% endif %} - {{ goal.description[:30] }}...
+{% endblock %}
 
 {% block content %}
 <div class="container">
     <div class="page-header">
-        <h1>Add New Objective</h1>
-        <p class="text-muted">For {{ student.display_name }} - Goal: {{ goal.description }}</p>
+        {% if edit_mode %}
+            <h1>✏️ Edit Objective</h1>
+            <p class="text-muted">Modify objective for {{ student.display_name }}</p>
+        {% else %}
+            <h1>🎯 Add New Objective</h1>
+            <p class="text-muted">Create objective for {{ student.display_name }}</p>
+        {% endif %}
+        <div class="goal-context">
+            <strong>Goal:</strong> {{ goal.description }}
+        </div>
     </div>
 
-    <div class="card">
+    <!-- ✅ ADD COLOR CODING -->
+    <div class="card {% if edit_mode %}edit-form{% else %}objective-form{% endif %}">
         <form method="POST">
             <div class="form-group">
                 <label for="description">Objective Description *</label>
+                <!-- ✅ PRE-FILL WITH EXISTING TEXT -->
                 <textarea id="description" name="description" rows="3" required 
-                         placeholder="Describe the specific, measurable objective (e.g., 'Produce /r/ sound in initial position with 85% accuracy')"></textarea>
+                         placeholder="Describe the specific, measurable objective (e.g., 'Produce /r/ sound in initial position with 85% accuracy')">{% if edit_mode and objective %}{{ objective.description }}{% endif %}</textarea>
             </div>
             
             <div class="form-group">
                 <label for="target_percentage">Target Percentage</label>
+                <!-- ✅ PRE-FILL WITH EXISTING VALUE -->
                 <input type="number" id="target_percentage" name="target_percentage" 
-                       value="80" min="0" max="100">
+                       value="{% if edit_mode and objective %}{{ objective.target_percentage }}{% else %}80{% endif %}" 
+                       min="0" max="100">
                 <small class="form-text">Target accuracy percentage for this objective</small>
             </div>
             
             <div class="form-group">
                 <label for="notes">Notes</label>
+                <!-- ✅ PRE-FILL WITH EXISTING NOTES -->
                 <textarea id="notes" name="notes" rows="2" 
-                         placeholder="Additional notes or instructions for this objective"></textarea>
+                         placeholder="Additional notes or instructions for this objective">{% if edit_mode and objective %}{{ objective.notes }}{% endif %}</textarea>
             </div>
             
             <div class="button-group">
-                <button type="submit" class="btn btn-primary">Add Objective</button>
-                  <a href="{{ url_for('students.student_detail', student_id=student.id) }}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn {% if edit_mode %}btn-warning{% else %}btn-success{% endif %}">
+                    {% if edit_mode %}💾 Update Objective{% else %}🎯 Add Objective{% endif %}
+                </button>
+                <a href="{{ url_for('students.student_detail', student_id=student.id) }}" class="btn btn-secondary">Cancel</a>
             </div>
         </form>
     </div>
 </div>
+
+<style>
+/* ✅ COLOR CODING STYLES */
+.add-form {
+    border-left: 5px solid #28a745; /* Green for adding */
+    background: linear-gradient(135deg, #f8fff9 0%, #ffffff 100%);
+}
+
+.edit-form {
+    border-left: 5px solid #ffc107; /* Yellow for editing */
+    background: linear-gradient(135deg, #fffbf0 0%, #ffffff 100%);
+}
+
+.objective-form {
+    border-left: 5px solid #17a2b8; /* Blue for objectives */
+    background: linear-gradient(135deg, #f0faff 0%, #ffffff 100%);
+}
+
+.goal-context {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 4px;
+    margin-top: 10px;
+    font-size: 0.9rem;
+    border-left: 3px solid #6c757d;
+}
+
+.page-header h1 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-warning {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #212529;
+}
+
+.btn-warning:hover {
+    background-color: #e0a800;
+    border-color: #d39e00;
+    color: #212529;
+}
+</style>
 {% endblock %}

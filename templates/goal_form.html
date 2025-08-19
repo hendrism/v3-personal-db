@@ -1,32 +1,45 @@
 {% extends "base.html" %}
 
-{% block title %}Add Goal - {{ student.display_name }}{% endblock %}
+{% block title %}
+{% if edit_mode %}Edit Goal{% else %}Add Goal{% endif %} - {{ student.display_name }}
+{% endblock %}
 
 {% block content %}
 <div class="container">
     <div class="page-header">
-        <h1>Add New Goal</h1>
-        <p class="text-muted">For {{ student.display_name }}</p>
+        {% if edit_mode %}
+            <h1>✏️ Edit Goal</h1>
+            <p class="text-muted">Modify goal for {{ student.display_name }}</p>
+        {% else %}
+            <h1>➕ Add New Goal</h1>
+            <p class="text-muted">Create goal for {{ student.display_name }}</p>
+        {% endif %}
     </div>
 
-    <div class="card">
+    <!-- ✅ ADD COLOR CODING -->
+    <div class="card {% if edit_mode %}edit-form{% else %}add-form{% endif %}">
         <form method="POST">
             <div class="form-group">
                 <label for="description">Goal Description *</label>
+                <!-- ✅ PRE-FILL WITH EXISTING TEXT -->
                 <textarea id="description" name="description" rows="3" required 
-                         placeholder="Describe the overall goal (e.g., 'Improve articulation of /r/ sound in all positions')"></textarea>
+                         placeholder="Describe the overall goal (e.g., 'Improve articulation of /r/ sound in all positions')">{% if edit_mode and goal %}{{ goal.description }}{% endif %}</textarea>
             </div>
             
             <div class="form-group">
                 <label for="target_accuracy">Target Accuracy (%)</label>
+                <!-- ✅ PRE-FILL WITH EXISTING VALUE -->
                 <input type="number" id="target_accuracy" name="target_accuracy" 
-                       value="80" min="0" max="100">
+                       value="{% if edit_mode and goal %}{{ goal.target_accuracy }}{% else %}80{% endif %}" 
+                       min="0" max="100">
                 <small class="form-text">Overall target accuracy for this goal</small>
             </div>
             
             <div class="button-group">
-                <button type="submit" class="btn btn-primary">Add Goal</button>
-                  <a href="{{ url_for('students.student_detail', student_id=student.id) }}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn {% if edit_mode %}btn-warning{% else %}btn-primary{% endif %}">
+                    {% if edit_mode %}💾 Update Goal{% else %}➕ Add Goal{% endif %}
+                </button>
+                <a href="{{ url_for('students.student_detail', student_id=student.id) }}" class="btn btn-secondary">Cancel</a>
             </div>
         </form>
     </div>

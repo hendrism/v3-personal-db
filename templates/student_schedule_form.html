@@ -28,6 +28,15 @@
                 </select>
             </div>
         </div>
+
+        <div class="form-group">
+            <label for="room_number">Room Number</label>
+            <input type="text" id="room_number" name="room_number" 
+                value="{% if schedule and schedule.room_number %}{{ schedule.room_number }}{% endif %}"
+                placeholder="e.g., 205, Main Office, Library">
+            <small class="form-text">Room where student can be found (for facilitator)</small>
+        </div>
+    
         
         <div style="margin: 2rem 0;">
             <h3>Class Schedule</h3>

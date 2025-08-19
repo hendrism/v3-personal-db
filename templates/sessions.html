@@ -29,7 +29,6 @@
                     <th>Date</th>
                     <th>Time</th>
                     <th>Type</th>
-                    <th>Location</th>
                     <th>Status</th>
                     <th>SOAP Note</th>
                     <th>Actions</th>
@@ -52,7 +51,6 @@
                         {% endif %}
                     </td>
                     <td>{{ session.session_type }}</td>
-                    <td>{{ session.location or '-' }}</td>
                     <td>
                         <span class="status-badge status-{{ session.status.lower().replace(' ', '-') }}">
                             {{ session.status }}
