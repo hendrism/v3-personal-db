@@ -194,7 +194,7 @@ def main():
         print("\n🎉 SUCCESS! Your v3 system has been enhanced with objectives support!")
         print("\nNext steps:")
         print("1. Replace your existing files with the enhanced versions:")
-        print("   - database.py")
+        print("   - database/")
         print("   - models.py") 
         print("   - app.py")
         print("   - templates/session_detail.html")
