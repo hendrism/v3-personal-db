@@ -1,4 +1,4 @@
-# app.py - Enhanced with Objectives Support (keeping all existing functionality)
+# app.py - Complete Enhanced Version with Objectives Support
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from database import init_db, get_db, add_sample_data
 from models import Student, Session, Goal, Objective, TrialLog, SOAPNote, School, StudentSchedule, get_thomas_stone_schedule
@@ -71,18 +71,35 @@ def student_detail(student_id):
     sessions = Session.get_by_student(db, student_id)
     goals = Goal.get_by_student(db, student_id)
     
-    # Enhanced: Get goals with their objectives
+    # Enhanced: Get goals with their objectives and calculate progress
     goals_with_objectives = []
     for goal in goals:
         objectives = goal.get_objectives(db)
+        # Add current progress to each objective
+        for objective in objectives:
+            objective.current_progress = objective.get_current_progress(db)
+        
         goals_with_objectives.append({
             'goal': goal,
             'objectives': objectives,
             'progress': goal.get_current_progress(db)
         })
     
+    # Get recent trials and add objective descriptions
     recent_trials = TrialLog.get_recent_by_student(db, student_id, limit=10)
+    for trial in recent_trials:
+        if trial.objective_id:
+            objective = trial.get_objective(db)
+            trial.objective_description = objective.description if objective else None
+        else:
+            trial.objective_description = None
+    
+    # Get SOAP notes and add session dates
     soap_notes = SOAPNote.get_by_student(db, student_id)
+    for soap in soap_notes:
+        session = soap.get_session(db)
+        soap.session_date = session.session_date if session else 'Unknown'
+    
     student_schedule = StudentSchedule.get_by_student(db, student_id)
     schools = {school.id: school for school in School.get_all(db)}
     
@@ -216,6 +233,12 @@ def session_detail(session_id):
         all_objectives.extend(objectives)
     
     trial_logs = TrialLog.get_by_session(db, session_id)
+    # Add objective descriptions to trial logs
+    for trial in trial_logs:
+        if trial.objective_id:
+            objective = trial.get_objective(db)
+            trial.objective_description = objective.description if objective else None
+    
     soap_note = SOAPNote.get_by_session(db, session_id)
     
     return render_template('session_detail.html',
