@@ -52,7 +52,7 @@ Details{% endblock %} {% block content %}
     >
       <h2>Goals & Objectives</h2>
       <a
-        href="{{ url_for('new_goal', student_id=student.id) }}"
+        href="{{ url_for('students.new_goal', student_id=student.id) }}"
         class="btn btn-primary"
         >Add Goal</a
       >
@@ -103,12 +103,12 @@ Details{% endblock %} {% block content %}
           </div>
           <div style="display: flex; gap: 8px">
             <a
-              href="{{ url_for('edit_goal', goal_id=goal_data.goal.id) }}"
+              href="{{ url_for('students.edit_goal', goal_id=goal_data.goal.id) }}"
               class="btn btn-sm btn-outline"
               >Edit</a
             >
             <a
-              href="{{ url_for('new_objective', goal_id=goal_data.goal.id) }}"
+              href="{{ url_for('students.new_objective', goal_id=goal_data.goal.id) }}"
               class="btn btn-sm btn-outline"
               >Add Objective</a
             >
@@ -173,7 +173,7 @@ Details{% endblock %} {% block content %}
             </div>
             <div style="display: flex; gap: 5px">
               <a
-                href="{{ url_for('edit_objective', objective_id=objective.id) }}"
+                href="{{ url_for('students.edit_objective', objective_id=objective.id) }}"
                 class="btn btn-sm btn-outline"
                 >Edit</a
               >
@@ -195,7 +195,7 @@ Details{% endblock %} {% block content %}
         {% endfor %} {% else %}
         <p class="text-muted" style="margin: 0">
           No objectives yet.
-          <a href="{{ url_for('new_objective', goal_id=goal_data.goal.id) }}"
+          <a href="{{ url_for('students.new_objective', goal_id=goal_data.goal.id) }}"
             >Add the first objective</a
           >
         </p>
@@ -206,7 +206,7 @@ Details{% endblock %} {% block content %}
     <div class="text-center" style="padding: 40px">
       <p class="text-muted">No goals set yet.</p>
       <a
-        href="{{ url_for('new_goal', student_id=student.id) }}"
+        href="{{ url_for('students.new_goal', student_id=student.id) }}"
         class="btn btn-primary"
         >Add First Goal</a
       >
@@ -226,7 +226,7 @@ Details{% endblock %} {% block content %}
     >
       <h2>Recent Sessions</h2>
       <a
-        href="{{ url_for('new_session') }}?student_id={{ student.id }}"
+        href="{{ url_for('sessions.new_session') }}?student_id={{ student.id }}"
         class="btn btn-primary"
         >Schedule Session</a
       >
@@ -263,7 +263,7 @@ Details{% endblock %} {% block content %}
           {% endif %}
         </div>
         <a
-          href="{{ url_for('session_detail', session_id=session.id) }}"
+          href="{{ url_for('sessions.session_detail', session_id=session.id) }}"
           class="btn btn-sm btn-outline"
           >View</a
         >
@@ -273,7 +273,7 @@ Details{% endblock %} {% block content %}
     {% if sessions|length > 5 %}
     <p class="text-muted">
       Showing 5 most recent sessions.
-      <a href="{{ url_for('sessions') }}?student={{ student.id }}"
+      <a href="{{ url_for('sessions.sessions') }}?student={{ student.id }}"
         >View all sessions</a
       >
     </p>
@@ -353,7 +353,7 @@ Details{% endblock %} {% block content %}
         >
           <span><strong>Session:</strong> {{ soap.session_date }}</span>
           <a
-            href="{{ url_for('soap_note', session_id=soap.session_id) }}"
+            href="{{ url_for('sessions.soap_note', session_id=soap.session_id) }}"
             class="btn btn-sm btn-outline"
             >View</a
           >
@@ -384,7 +384,7 @@ Details{% endblock %} {% block content %}
     >
       <h2>School Schedule</h2>
       <a
-        href="{{ url_for('student_schedule', student_id=student.id) }}"
+        href="{{ url_for('students.student_schedule', student_id=student.id) }}"
         class="btn btn-outline"
         >Edit Schedule</a
       >
@@ -415,23 +415,23 @@ Details{% endblock %} {% block content %}
     <h2>Quick Actions</h2>
     <div class="button-group">
       <a
-        href="{{ url_for('new_session') }}?student_id={{ student.id }}"
+        href="{{ url_for('sessions.new_session') }}?student_id={{ student.id }}"
         class="btn btn-primary"
         >Schedule Session</a
       >
       <a
-        href="{{ url_for('new_goal', student_id=student.id) }}"
+        href="{{ url_for('students.new_goal', student_id=student.id) }}"
         class="btn btn-secondary"
         >Add Goal</a
       >
       {% if not student_schedule %}
       <a
-        href="{{ url_for('student_schedule', student_id=student.id) }}"
+        href="{{ url_for('students.student_schedule', student_id=student.id) }}"
         class="btn btn-outline"
         >Set School Schedule</a
       >
       {% endif %}
-      <a href="{{ url_for('students') }}" class="btn btn-outline"
+      <a href="{{ url_for('students.students') }}" class="btn btn-outline"
         >Back to Students</a
       >
     </div>
