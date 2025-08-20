@@ -32,6 +32,39 @@
                 <strong>O</strong>bjective
                 <span class="text-muted">(Trial data, measurable observations)</span>
             </label>
+            
+            {% if trial_logs %}
+            <div style="margin-bottom: 1rem; padding: 1rem; background: #e9f7ef; border-radius: 4px;">
+                <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #27ae60;">📊 Session Trial Data - Click to Insert</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px;">
+                    {% for trial in trial_logs %}
+                    <div class="trial-summary-card" onclick="insertTrialData({{ loop.index0 }})" style="
+                        padding: 10px; 
+                        background: white; 
+                        border: 1px solid #ddd; 
+                        border-radius: 4px; 
+                        cursor: pointer;
+                        transition: all 0.2s;
+                    ">
+                        <div style="font-weight: bold; font-size: 12px; margin-bottom: 5px;">
+                            {{ trial.objective_description[:40] + '...' if trial.objective_description|length > 40 else trial.objective_description }}
+                        </div>
+                        <div style="font-size: 11px; color: #666;">
+                            <div><strong>{{ trial.success_percentage }}% Success</strong> ({{ trial.total_trials }} trials)</div>
+                            <div style="margin-top: 3px;">
+                                Independent: {{ trial.independent }} |
+                                Min: {{ trial.minimal_support }} |
+                                Mod: {{ trial.moderate_support }} |
+                                Max: {{ trial.maximal_support }} |
+                                Incorrect: {{ trial.incorrect }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
             <textarea id="objective" name="objective" rows="6" placeholder="Trial data collected... Accuracy observed... Cuing levels required...">{{ soap_note.objective if soap_note else '' }}</textarea>
         </div>
         
@@ -68,7 +101,78 @@
     </div>
 </div>
 
+<style>
+.trial-summary-card:hover {
+    background-color: #f8f9fa !important;
+    border-color: #27ae60 !important;
+    transform: translateY(-1px);
+}
+
+.form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.4;
+    resize: vertical;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #333;
+}
+
+.text-muted {
+    color: #6c757d;
+    font-weight: normal;
+    font-size: 13px;
+}
+</style>
+
 <script>
+    // Trial data for insertion
+    const trialData = [
+        {% for trial in trial_logs %}
+        {
+            objective: "{{ trial.objective_description }}",
+            success_percentage: {{ trial.success_percentage }},
+            total_trials: {{ trial.total_trials }},
+            independent: {{ trial.independent }},
+            minimal_support: {{ trial.minimal_support }},
+            moderate_support: {{ trial.moderate_support }},
+            maximal_support: {{ trial.maximal_support }},
+            incorrect: {{ trial.incorrect }}
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+    
+    function insertTrialData(index) {
+        const trial = trialData[index];
+        const objectiveTextArea = document.getElementById('objective');
+        
+        // Format the trial data text
+        const trialText = `${trial.objective}: Completed ${trial.total_trials} trials with ${trial.success_percentage}% accuracy. Breakdown: Independent: ${trial.independent}, Minimal support: ${trial.minimal_support}, Moderate support: ${trial.moderate_support}, Maximal support: ${trial.maximal_support}, Incorrect: ${trial.incorrect}.`;
+        
+        // Insert at cursor position or append
+        const currentValue = objectiveTextArea.value;
+        const cursorPos = objectiveTextArea.selectionStart;
+        const newValue = currentValue.slice(0, cursorPos) + 
+                        (currentValue ? ' ' : '') + trialText + 
+                        (currentValue.slice(cursorPos) ? ' ' : '') + 
+                        currentValue.slice(cursorPos);
+        
+        objectiveTextArea.value = newValue;
+        objectiveTextArea.focus();
+        
+        // Position cursor after inserted text
+        const newCursorPos = cursorPos + trialText.length + (currentValue ? 1 : 0);
+        objectiveTextArea.setSelectionRange(newCursorPos, newCursorPos);
+    }
+
     const templates = {
         articulation: {
             subjective: "Student was cooperative and engaged throughout the session. No concerns reported by classroom teacher.",

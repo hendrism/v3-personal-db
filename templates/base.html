@@ -388,6 +388,7 @@
               <li><a href="{{ url_for('students.students') }}">Students</a></li>
               <li><a href="{{ url_for('schools.schools') }}">Schools</a></li>
               <li><a href="{{ url_for('sessions.sessions') }}">Sessions</a></li>
+              <li><a href="{{ url_for('sessions.session_tracking') }}">Live Tracking</a></li>
               <li>
                 <a
                   href="{{ url_for('students.new_student') }}"
@@ -421,6 +422,26 @@
       function submitForm(formId) {
         document.getElementById(formId).submit();
       }
+      
+      // Time formatting utility
+      function formatTimeToAMPM(timeString) {
+        if (!timeString) return '';
+        const [hours, minutes] = timeString.split(':');
+        const hour = parseInt(hours, 10);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+        return displayHour + ':' + minutes + ' ' + ampm;
+      }
+      
+      // Format all time elements on page load
+      function formatTimesOnPage() {
+        document.querySelectorAll('.time-format').forEach(function(element) {
+          const timeValue = element.textContent.trim();
+          if (timeValue.match(/^\d{2}:\d{2}(:\d{2})?$/)) {
+            element.textContent = formatTimeToAMPM(timeValue);
+          }
+        });
+      }
 
       // Auto-focus first input on forms
       document.addEventListener("DOMContentLoaded", function () {
@@ -430,6 +451,9 @@
         if (firstInput) {
           firstInput.focus();
         }
+        
+        // Format times on page load
+        formatTimesOnPage();
       });
     </script>
   </body>

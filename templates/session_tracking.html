@@ -1,0 +1,1003 @@
+{% extends "base.html" %}
+
+{% block title %}Session Tracking - Personal Student Database{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1>Live Session Tracking</h1>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <p class="text-muted">Track trials and data for multiple students in real-time</p>
+            <div style="display: flex; gap: 10px;">
+                <a href="/sessions" class="btn btn-outline">View Past Sessions</a>
+                <a href="/sessions/new" class="btn btn-secondary">Quick Add Session</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Selection Section -->
+    <div class="card">
+        <h2>Add Students to Session</h2>
+        <div class="form-group">
+            <label for="student-select">Select Student:</label>
+            <select id="student-select" class="form-control">
+                <option value="">Choose a student...</option>
+                {% for student in students %}
+                <option value="{{ student.id }}">{{ student.display_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button id="add-student-btn" class="btn btn-primary">Add Student to Session</button>
+    </div>
+
+    <!-- Student Navigation Tabs -->
+    <div id="student-tabs" class="student-tabs" style="display: none;">
+        <div class="tabs-header">
+            <div class="tabs-container">
+                <!-- Tabs will be added here dynamically -->
+            </div>
+            <button class="btn btn-sm btn-outline" onclick="toggleStudentView()">Toggle Compact View</button>
+        </div>
+    </div>
+
+    <!-- Session Students Container -->
+    <div id="session-students-container" class="students-container">
+        <!-- Students will be dynamically added here -->
+    </div>
+
+    <!-- Session Info and Save -->
+    <div class="card" id="session-controls" style="display: none;">
+        <h2>Session Information</h2>
+        <div class="grid grid-2">
+            <div class="form-group">
+                <label for="session-date">Session Date:</label>
+                <input type="date" id="session-date" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="session-type">Session Type:</label>
+                <select id="session-type" class="form-control">
+                    <option value="Individual">Individual</option>
+                    <option value="Group">Group</option>
+                    <option value="Push-in">Push-in</option>
+                    <option value="Pull-out">Pull-out</option>
+                </select>
+            </div>
+        </div>
+        <div class="grid grid-2">
+            <div class="form-group">
+                <label for="start-time">Start Time:</label>
+                <input type="time" id="start-time" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="end-time">End Time:</label>
+                <input type="time" id="end-time" class="form-control">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="location">Location:</label>
+            <input type="text" id="location" class="form-control" placeholder="Room/Location">
+        </div>
+        <div class="form-group">
+            <label for="session-notes">Session Notes:</label>
+            <textarea id="session-notes" class="form-control" rows="3" placeholder="General session notes..."></textarea>
+        </div>
+        
+        <div style="display: flex; gap: 1rem; margin-top: 20px;">
+            <button id="save-session-btn" class="btn btn-success">Save Session Data</button>
+            <button id="clear-session-btn" class="btn btn-outline">Clear All Data</button>
+        </div>
+    </div>
+</div>
+
+<!-- Student Card Template (Hidden) -->
+<template id="student-card-template">
+    <div class="card student-card" data-student-id="">
+        <div class="student-header">
+            <h2 class="student-name"></h2>
+            <button class="btn btn-outline remove-student-btn">Remove Student</button>
+        </div>
+        
+        <!-- Goal Selection -->
+        <div class="form-group">
+            <label>Select Goal:</label>
+            <select class="goal-select form-control">
+                <option value="">Choose a goal...</option>
+            </select>
+            <button class="add-goal-btn btn btn-secondary" style="margin-top: 10px;">Add Goal</button>
+        </div>
+        
+        <!-- Goals Container -->
+        <div class="goals-container">
+            <!-- Goals will be added here dynamically -->
+        </div>
+    </div>
+</template>
+
+<!-- Goal Tracking Template (Hidden) -->
+<template id="goal-tracking-template">
+    <div class="goal-tracking" data-goal-id="">
+        <div class="goal-header">
+            <h3 class="goal-description"></h3>
+            <button class="btn btn-outline remove-goal-btn">Remove Goal</button>
+        </div>
+        
+        <!-- Objective Selection -->
+        <div class="form-group">
+            <label>Select Objective:</label>
+            <select class="objective-select form-control">
+                <option value="">Choose an objective...</option>
+            </select>
+            <button class="add-objective-btn btn btn-secondary" style="margin-top: 10px;">Add Objective</button>
+        </div>
+        
+        <!-- Objectives Container -->
+        <div class="objectives-container">
+            <!-- Objectives will be added here dynamically -->
+        </div>
+    </div>
+</template>
+
+<!-- Objective Tracking Template (Hidden) -->
+<template id="objective-tracking-template">
+    <div class="objective-tracking" data-objective-id="">
+        <div class="objective-header">
+            <h4 class="objective-description"></h4>
+            <button class="btn btn-outline remove-objective-btn">Remove Objective</button>
+        </div>
+        
+        <!-- Trial Buttons -->
+        <div class="trial-buttons">
+            <button class="trial-btn trial-independent" data-type="independent">
+                <div class="btn-label">Independent</div>
+                <div class="btn-count">0</div>
+            </button>
+            <button class="trial-btn trial-minimal" data-type="minimal_support">
+                <div class="btn-label">Min Support</div>
+                <div class="btn-count">0</div>
+            </button>
+            <button class="trial-btn trial-moderate" data-type="moderate_support">
+                <div class="btn-label">Mod Support</div>
+                <div class="btn-count">0</div>
+            </button>
+            <button class="trial-btn trial-maximal" data-type="maximal_support">
+                <div class="btn-label">Max Support</div>
+                <div class="btn-count">0</div>
+            </button>
+            <button class="trial-btn trial-incorrect" data-type="incorrect">
+                <div class="btn-label">Incorrect</div>
+                <div class="btn-count">0</div>
+            </button>
+        </div>
+        
+        <!-- Trial Summary -->
+        <div class="trial-summary">
+            <div class="summary-stats">
+                <span class="total-trials">Total Trials: 0</span>
+                <span class="accuracy">Accuracy: 0%</span>
+            </div>
+            <button class="reset-trials-btn btn btn-outline">Reset Trials</button>
+        </div>
+        
+        <!-- Notes -->
+        <div class="form-group" style="margin-top: 15px;">
+            <label>Objective Notes:</label>
+            <textarea class="objective-notes form-control" rows="2" placeholder="Notes for this objective..."></textarea>
+        </div>
+    </div>
+</template>
+
+<style>
+.student-card {
+    margin-bottom: 20px;
+    border: 2px solid #ddd;
+}
+
+.student-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.student-name {
+    margin: 0;
+    color: #333;
+}
+
+.goal-tracking {
+    background: #f9f9f9;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+.goal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.goal-description {
+    margin: 0;
+    color: #555;
+}
+
+.objective-tracking {
+    background: white;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+.objective-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.objective-description {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.trial-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+}
+
+.trial-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 100px;
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.trial-btn:hover {
+    transform: translateY(-2px);
+}
+
+.trial-btn:active {
+    transform: translateY(0);
+}
+
+/* Specific trial button colors */
+.trial-independent {
+    background-color: #28a745;
+    border-color: #28a745;
+    color: white;
+}
+
+.trial-independent:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+.trial-minimal {
+    background-color: #17a2b8;
+    border-color: #17a2b8;
+    color: white;
+}
+
+.trial-minimal:hover {
+    background-color: #138496;
+    border-color: #117a8b;
+}
+
+.trial-moderate {
+    background-color: #fd7e14;
+    border-color: #fd7e14;
+    color: white;
+}
+
+.trial-moderate:hover {
+    background-color: #e96b00;
+    border-color: #d35400;
+}
+
+.trial-maximal {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+
+.trial-maximal:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+}
+
+.trial-incorrect {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+.trial-incorrect:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
+.btn-label {
+    font-weight: bold;
+    font-size: 12px;
+    margin-bottom: 5px;
+}
+
+.btn-count {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.trial-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background: #f5f5f5;
+    border-radius: 4px;
+}
+
+.summary-stats {
+    display: flex;
+    gap: 20px;
+}
+
+.summary-stats span {
+    font-weight: bold;
+}
+
+.remove-student-btn, .remove-goal-btn, .remove-objective-btn {
+    color: #dc3545;
+    border-color: #dc3545;
+}
+
+.remove-student-btn:hover, .remove-goal-btn:hover, .remove-objective-btn:hover {
+    background-color: #dc3545;
+    color: white;
+}
+
+#session-controls {
+    margin-top: 30px;
+    border: 2px solid #28a745;
+}
+
+/* Tabbed interface styles */
+.student-tabs {
+    margin-bottom: 20px;
+}
+
+.tabs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.tabs-container {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.student-tab {
+    padding: 8px 16px;
+    background: white;
+    border: 2px solid #ddd;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s;
+    white-space: nowrap;
+}
+
+.student-tab.active {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.student-tab:hover {
+    background: #e9ecef;
+    border-color: #adb5bd;
+}
+
+.student-tab.active:hover {
+    background: #0056b3;
+    border-color: #0056b3;
+}
+
+.students-container.compact-view .student-card {
+    display: none;
+}
+
+.students-container.compact-view .student-card.active {
+    display: block;
+}
+
+.compact-indicator {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: #28a745;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 12px;
+    z-index: 1000;
+}
+
+.form-control {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.grid {
+    display: grid;
+    gap: 15px;
+}
+
+.grid-2 {
+    grid-template-columns: 1fr 1fr;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+</style>
+
+<script>
+class SessionTracker {
+    constructor() {
+        this.students = new Map(); // student_id -> student data
+        this.goals = new Map(); // goal_id -> goal data  
+        this.objectives = new Map(); // objective_id -> objective data
+        this.trialData = new Map(); // objective_id -> trial counts
+        this.compactView = false; // toggle for compact/expanded view
+        this.activeStudentId = null; // currently active student in compact view
+        
+        this.initializeEventListeners();
+        this.setCurrentDateTime();
+    }
+    
+    initializeEventListeners() {
+        // Add student to session
+        document.getElementById('add-student-btn').addEventListener('click', () => {
+            this.addStudentToSession();
+        });
+        
+        // Save session data
+        document.getElementById('save-session-btn').addEventListener('click', () => {
+            this.saveSessionData();
+        });
+        
+        // Clear all data
+        document.getElementById('clear-session-btn').addEventListener('click', () => {
+            this.clearAllData();
+        });
+    }
+    
+    setCurrentDateTime() {
+        const now = new Date();
+        document.getElementById('session-date').value = now.toISOString().split('T')[0];
+        document.getElementById('start-time').value = now.toTimeString().split(' ')[0].substring(0, 5);
+    }
+    
+    async addStudentToSession() {
+        const studentSelect = document.getElementById('student-select');
+        const studentId = parseInt(studentSelect.value);
+        
+        if (!studentId || this.students.has(studentId)) {
+            if (this.students.has(studentId)) {
+                alert('Student is already in the session!');
+            }
+            return;
+        }
+        
+        const studentName = studentSelect.options[studentSelect.selectedIndex].text;
+        const studentData = { id: studentId, name: studentName };
+        
+        this.students.set(studentId, studentData);
+        await this.renderStudentCard(studentData);
+        
+        // Show session controls if this is the first student
+        if (this.students.size === 1) {
+            document.getElementById('session-controls').style.display = 'block';
+        }
+        
+        // Update tabs
+        this.updateStudentTabs();
+        
+        // Reset select
+        studentSelect.value = '';
+    }
+    
+    updateStudentTabs() {
+        const tabsContainer = document.querySelector('.tabs-container');
+        const studentTabs = document.getElementById('student-tabs');
+        
+        if (this.students.size === 0) {
+            studentTabs.style.display = 'none';
+            return;
+        }
+        
+        // Show tabs if we have students
+        studentTabs.style.display = 'block';
+        
+        // Clear existing tabs
+        tabsContainer.innerHTML = '';
+        
+        // Create tabs for each student
+        for (const [studentId, studentData] of this.students) {
+            const tab = document.createElement('div');
+            tab.className = `student-tab ${studentId === this.activeStudentId ? 'active' : ''}`;
+            tab.textContent = studentData.name;
+            tab.onclick = (event) => this.switchToStudent(studentId, event.target);
+            tabsContainer.appendChild(tab);
+        }
+        
+        // If no active student is set, activate the first one in compact view
+        if (this.compactView && !this.activeStudentId && this.students.size > 0) {
+            const firstStudentId = this.students.keys().next().value;
+            this.switchToStudent(firstStudentId);
+        }
+    }
+    
+    switchToStudent(studentId, clickedTab = null) {
+        // Update active student
+        this.activeStudentId = studentId;
+        
+        // Update tab appearance
+        document.querySelectorAll('.student-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        if (clickedTab) {
+            clickedTab.classList.add('active');
+        } else {
+            // Find the tab for this student and activate it
+            document.querySelectorAll('.student-tab').forEach(tab => {
+                if (tab.textContent === this.students.get(studentId)?.name) {
+                    tab.classList.add('active');
+                }
+            });
+        }
+        
+        // In compact view, show only the active student
+        if (this.compactView) {
+            document.querySelectorAll('.student-card').forEach(card => {
+                card.classList.remove('active');
+                if (parseInt(card.dataset.studentId) === studentId) {
+                    card.classList.add('active');
+                }
+            });
+        }
+    }
+    
+    toggleStudentView() {
+        this.compactView = !this.compactView;
+        const container = document.getElementById('session-students-container');
+        const toggleBtn = document.querySelector('.tabs-header button');
+        
+        if (this.compactView) {
+            container.classList.add('compact-view');
+            toggleBtn.textContent = 'Show All Students';
+            
+            // Show compact indicator
+            if (!document.querySelector('.compact-indicator')) {
+                const indicator = document.createElement('div');
+                indicator.className = 'compact-indicator';
+                indicator.textContent = 'Compact View';
+                document.body.appendChild(indicator);
+            }
+            
+            // Activate first student if none selected
+            if (!this.activeStudentId && this.students.size > 0) {
+                const firstStudentId = this.students.keys().next().value;
+                this.switchToStudent(firstStudentId);
+            }
+        } else {
+            container.classList.remove('compact-view');
+            toggleBtn.textContent = 'Toggle Compact View';
+            
+            // Remove compact indicator
+            const indicator = document.querySelector('.compact-indicator');
+            if (indicator) {
+                indicator.remove();
+            }
+            
+            // Show all students
+            document.querySelectorAll('.student-card').forEach(card => {
+                card.classList.remove('active');
+            });
+        }
+    }
+    
+    async renderStudentCard(studentData) {
+        const template = document.getElementById('student-card-template');
+        const clone = template.content.cloneNode(true);
+        
+        const card = clone.querySelector('.student-card');
+        card.dataset.studentId = studentData.id;
+        
+        clone.querySelector('.student-name').textContent = studentData.name;
+        
+        // Load goals for this student
+        await this.loadStudentGoals(studentData.id, clone);
+        
+        // Add event listeners
+        this.setupStudentCardListeners(clone, studentData.id);
+        
+        document.getElementById('session-students-container').appendChild(clone);
+    }
+    
+    async loadStudentGoals(studentId, container) {
+        try {
+            const response = await fetch(`/api/students/${studentId}/goals`);
+            const goals = await response.json();
+            
+            const goalSelect = container.querySelector('.goal-select');
+            goalSelect.innerHTML = '<option value="">Choose a goal...</option>';
+            
+            goals.forEach(goal => {
+                const option = document.createElement('option');
+                option.value = goal.id;
+                option.textContent = goal.description;
+                goalSelect.appendChild(option);
+                
+                // Store goal data
+                this.goals.set(goal.id, goal);
+            });
+        } catch (error) {
+            console.error('Error loading goals:', error);
+        }
+    }
+    
+    setupStudentCardListeners(container, studentId) {
+        // Remove student button
+        container.querySelector('.remove-student-btn').addEventListener('click', () => {
+            this.removeStudent(studentId);
+        });
+        
+        // Add goal button
+        container.querySelector('.add-goal-btn').addEventListener('click', () => {
+            this.addGoalToStudent(studentId);
+        });
+    }
+    
+    removeStudent(studentId) {
+        if (confirm('Are you sure you want to remove this student from the session? All trial data will be lost.')) {
+            this.students.delete(studentId);
+            document.querySelector(`[data-student-id="${studentId}"]`).remove();
+            
+            // Update active student if we removed the active one
+            if (this.activeStudentId === studentId) {
+                this.activeStudentId = this.students.size > 0 ? this.students.keys().next().value : null;
+            }
+            
+            // Update tabs
+            this.updateStudentTabs();
+            
+            // Hide session controls if no students remain
+            if (this.students.size === 0) {
+                document.getElementById('session-controls').style.display = 'none';
+                // Remove compact indicator if it exists
+                const indicator = document.querySelector('.compact-indicator');
+                if (indicator) {
+                    indicator.remove();
+                }
+            }
+        }
+    }
+    
+    async addGoalToStudent(studentId) {
+        const studentCard = document.querySelector(`[data-student-id="${studentId}"]`);
+        const goalSelect = studentCard.querySelector('.goal-select');
+        const goalId = parseInt(goalSelect.value);
+        
+        if (!goalId) {
+            alert('Please select a goal first!');
+            return;
+        }
+        
+        const goalData = this.goals.get(goalId);
+        await this.renderGoalTracking(studentCard, goalData);
+        
+        // Reset select
+        goalSelect.value = '';
+    }
+    
+    async renderGoalTracking(studentCard, goalData) {
+        const template = document.getElementById('goal-tracking-template');
+        const clone = template.content.cloneNode(true);
+        
+        const goalContainer = clone.querySelector('.goal-tracking');
+        goalContainer.dataset.goalId = goalData.id;
+        
+        clone.querySelector('.goal-description').textContent = goalData.description;
+        
+        // Load objectives for this goal
+        await this.loadGoalObjectives(goalData.id, clone);
+        
+        // Add event listeners
+        this.setupGoalTrackingListeners(clone, goalData.id);
+        
+        studentCard.querySelector('.goals-container').appendChild(clone);
+    }
+    
+    async loadGoalObjectives(goalId, container) {
+        try {
+            const response = await fetch(`/api/goals/${goalId}/objectives`);
+            const objectives = await response.json();
+            
+            const objectiveSelect = container.querySelector('.objective-select');
+            objectiveSelect.innerHTML = '<option value="">Choose an objective...</option>';
+            
+            objectives.forEach(objective => {
+                const option = document.createElement('option');
+                option.value = objective.id;
+                option.textContent = objective.description;
+                objectiveSelect.appendChild(option);
+                
+                // Store objective data
+                this.objectives.set(objective.id, objective);
+            });
+        } catch (error) {
+            console.error('Error loading objectives:', error);
+        }
+    }
+    
+    setupGoalTrackingListeners(container, goalId) {
+        // Remove goal button
+        container.querySelector('.remove-goal-btn').addEventListener('click', () => {
+            this.removeGoal(goalId);
+        });
+        
+        // Add objective button
+        container.querySelector('.add-objective-btn').addEventListener('click', () => {
+            this.addObjectiveToGoal(goalId);
+        });
+    }
+    
+    removeGoal(goalId) {
+        if (confirm('Are you sure you want to remove this goal? All trial data will be lost.')) {
+            document.querySelector(`[data-goal-id="${goalId}"]`).remove();
+        }
+    }
+    
+    addObjectiveToGoal(goalId) {
+        const goalContainer = document.querySelector(`[data-goal-id="${goalId}"]`);
+        const objectiveSelect = goalContainer.querySelector('.objective-select');
+        const objectiveId = parseInt(objectiveSelect.value);
+        
+        if (!objectiveId) {
+            alert('Please select an objective first!');
+            return;
+        }
+        
+        const objectiveData = this.objectives.get(objectiveId);
+        this.renderObjectiveTracking(goalContainer, objectiveData);
+        
+        // Reset select
+        objectiveSelect.value = '';
+    }
+    
+    renderObjectiveTracking(goalContainer, objectiveData) {
+        const template = document.getElementById('objective-tracking-template');
+        const clone = template.content.cloneNode(true);
+        
+        const objectiveContainer = clone.querySelector('.objective-tracking');
+        objectiveContainer.dataset.objectiveId = objectiveData.id;
+        
+        clone.querySelector('.objective-description').textContent = objectiveData.description;
+        
+        // Initialize trial data
+        this.trialData.set(objectiveData.id, {
+            independent: 0,
+            minimal_support: 0,
+            moderate_support: 0,
+            maximal_support: 0,
+            incorrect: 0
+        });
+        
+        // Add event listeners
+        this.setupObjectiveTrackingListeners(clone, objectiveData.id);
+        
+        goalContainer.querySelector('.objectives-container').appendChild(clone);
+    }
+    
+    setupObjectiveTrackingListeners(container, objectiveId) {
+        // Trial buttons
+        container.querySelectorAll('.trial-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const type = btn.dataset.type;
+                this.recordTrial(objectiveId, type);
+            });
+        });
+        
+        // Remove objective button
+        container.querySelector('.remove-objective-btn').addEventListener('click', () => {
+            this.removeObjective(objectiveId);
+        });
+        
+        // Reset trials button
+        container.querySelector('.reset-trials-btn').addEventListener('click', () => {
+            this.resetObjectiveTrials(objectiveId);
+        });
+    }
+    
+    recordTrial(objectiveId, type) {
+        const trials = this.trialData.get(objectiveId);
+        trials[type]++;
+        this.updateObjectiveDisplay(objectiveId);
+    }
+    
+    updateObjectiveDisplay(objectiveId) {
+        const container = document.querySelector(`[data-objective-id="${objectiveId}"]`);
+        const trials = this.trialData.get(objectiveId);
+        
+        // Update button counts
+        Object.keys(trials).forEach(type => {
+            const btn = container.querySelector(`[data-type="${type}"]`);
+            btn.querySelector('.btn-count').textContent = trials[type];
+        });
+        
+        // Update summary
+        const total = Object.values(trials).reduce((sum, count) => sum + count, 0);
+        const correct = trials.independent + trials.minimal_support + trials.moderate_support + trials.maximal_support;
+        const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+        
+        container.querySelector('.total-trials').textContent = `Total Trials: ${total}`;
+        container.querySelector('.accuracy').textContent = `Accuracy: ${accuracy}%`;
+    }
+    
+    removeObjective(objectiveId) {
+        if (confirm('Are you sure you want to remove this objective? All trial data will be lost.')) {
+            this.trialData.delete(objectiveId);
+            document.querySelector(`[data-objective-id="${objectiveId}"]`).remove();
+        }
+    }
+    
+    resetObjectiveTrials(objectiveId) {
+        if (confirm('Are you sure you want to reset all trials for this objective?')) {
+            const trials = this.trialData.get(objectiveId);
+            Object.keys(trials).forEach(key => {
+                trials[key] = 0;
+            });
+            this.updateObjectiveDisplay(objectiveId);
+        }
+    }
+    
+    async saveSessionData() {
+        if (this.students.size === 0) {
+            alert('Please add at least one student to the session!');
+            return;
+        }
+        
+        if (this.trialData.size === 0) {
+            alert('Please record some trial data before saving!');
+            return;
+        }
+        
+        const sessionData = {
+            session_date: document.getElementById('session-date').value,
+            start_time: document.getElementById('start-time').value,
+            end_time: document.getElementById('end-time').value,
+            session_type: document.getElementById('session-type').value,
+            location: document.getElementById('location').value,
+            notes: document.getElementById('session-notes').value
+        };
+        
+        // For now, save each student's data separately
+        // In a real group session, you might want to create one session record
+        for (const [studentId, studentData] of this.students) {
+            const trials = [];
+            
+            // Collect all trial data for this student
+            document.querySelectorAll(`[data-student-id="${studentId}"] .objective-tracking`).forEach(objContainer => {
+                const objectiveId = parseInt(objContainer.dataset.objectiveId);
+                const trialCounts = this.trialData.get(objectiveId);
+                const notes = objContainer.querySelector('.objective-notes').value;
+                
+                if (Object.values(trialCounts).some(count => count > 0)) {
+                    const objective = this.objectives.get(objectiveId);
+                    trials.push({
+                        objective_id: objectiveId,
+                        goal_id: objective.goal_id || this.findGoalForObjective(objectiveId),
+                        ...trialCounts,
+                        notes: notes
+                    });
+                }
+            });
+            
+            if (trials.length > 0) {
+                const payload = {
+                    student_id: studentId,
+                    ...sessionData,
+                    trials: trials
+                };
+                
+                try {
+                    const response = await fetch('/api/sessions/save-trials', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        console.log(`Saved session for ${studentData.name}:`, result);
+                    }
+                } catch (error) {
+                    console.error('Error saving session:', error);
+                    alert('Error saving session data. Please try again.');
+                    return;
+                }
+            }
+        }
+        
+        alert('Session data saved successfully!');
+        this.clearAllData();
+    }
+    
+    findGoalForObjective(objectiveId) {
+        // Find which goal container this objective belongs to
+        const objElement = document.querySelector(`[data-objective-id="${objectiveId}"]`);
+        const goalElement = objElement.closest('.goal-tracking');
+        return parseInt(goalElement.dataset.goalId);
+    }
+    
+    clearAllData() {
+        if (confirm('Are you sure you want to clear all session data? This cannot be undone.')) {
+            this.students.clear();
+            this.goals.clear();
+            this.objectives.clear();
+            this.trialData.clear();
+            
+            document.getElementById('session-students-container').innerHTML = '';
+            document.getElementById('session-controls').style.display = 'none';
+            
+            // Reset form fields
+            document.getElementById('student-select').value = '';
+            document.getElementById('session-notes').value = '';
+            document.getElementById('location').value = '';
+            this.setCurrentDateTime();
+        }
+    }
+}
+
+// Initialize the session tracker when page loads
+let sessionTracker;
+document.addEventListener('DOMContentLoaded', () => {
+    sessionTracker = new SessionTracker();
+});
+
+// Global function for toggle button
+function toggleStudentView() {
+    if (sessionTracker) {
+        sessionTracker.toggleStudentView();
+    }
+}
+</script>
+{% endblock %}

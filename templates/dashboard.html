@@ -33,6 +33,7 @@
                     <tr>
                         <th>Student</th>
                         <th>Date</th>
+                        <th>Time</th>
                         <th>Type</th>
                     </tr>
                 </thead>
@@ -41,6 +42,7 @@
                     <tr>
                         <td>{{ session.student_name }}</td>
                         <td>{{ session.session_date }}</td>
+                        <td>{% if session.start_time %}<span class="time-format">{{ session.start_time }}</span>{% endif %}</td>
                         <td>{{ session.session_type }}</td>
                     </tr>
                     {% endfor %}

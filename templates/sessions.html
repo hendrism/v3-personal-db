@@ -7,7 +7,10 @@
 <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
         <h2 class="mb-0">Sessions</h2>
-        <a href="/sessions/new" class="btn btn-success">+ New Session</a>
+        <div style="display: flex; gap: 10px;">
+            <a href="/sessions/track" class="btn btn-primary">🎯 Live Tracking</a>
+            <a href="/sessions/new" class="btn btn-success">+ New Session</a>
+        </div>
     </div>
 
     <!-- Quick filters -->
@@ -45,7 +48,9 @@
                     <td>{{ session.session_date }}</td>
                     <td>
                         {% if session.start_time and session.end_time %}
-                            {{ session.start_time }} - {{ session.end_time }}
+                            <span class="time-format">{{ session.start_time }}</span> - <span class="time-format">{{ session.end_time }}</span>
+                        {% elif session.start_time %}
+                            <span class="time-format">{{ session.start_time }}</span>
                         {% else %}
                             -
                         {% endif %}

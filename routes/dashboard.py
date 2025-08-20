@@ -12,7 +12,7 @@ def dashboard():
     db = get_db()
 
     # Get recent activity
-    recent_sessions = Session.get_recent(db, limit=5)
+    recent_sessions = Session.get_recent_with_student_info(db, limit=5)
     active_students = Student.get_active(db)
     pending_soap_notes = Session.get_pending_soap_notes(db)
     upcoming_sessions = Session.get_upcoming(db, days=7)

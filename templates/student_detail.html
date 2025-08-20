@@ -307,18 +307,28 @@ Details{% endblock %} {% block content %}
           border-radius: 4px;
         "
       >
-        {% if trial.objective_id %}
-        <strong
-          >{{ trial.objective_description if trial.objective_description else
-          'Unknown Objective' }}</strong
-        >
-        {% else %}
-        <strong>Trial Data</strong>
-        {% endif %}
-        <span class="text-muted"
-          >• {{ trial.independence_percentage }}% independent ({{
-          trial.total_trials }} trials)</span
-        >
+        <div style="display: flex; justify-content: space-between; align-items: start;">
+          <div>
+            {% if trial.objective_id %}
+            <strong
+              >{{ trial.objective_description if trial.objective_description else
+              'Unknown Objective' }}</strong
+            >
+            {% else %}
+            <strong>Trial Data</strong>
+            {% endif %}
+            <span class="text-muted"
+              >• {{ trial.independence_percentage }}% independent ({{
+              trial.total_trials }} trials)</span
+            >
+          </div>
+          <div style="font-size: 0.8rem; color: #6c757d; text-align: right;">
+            <div>{{ trial.created_at[:10] if trial.created_at else 'Date unknown' }}</div>
+            {% if trial.created_at and trial.created_at|length > 10 %}
+            <div class="time-format">{{ trial.created_at[11:16] }}</div>
+            {% endif %}
+          </div>
+        </div>
         <div style="font-size: 0.85rem; color: #6c757d; margin-top: 4px">
           Independent: {{ trial.independent }} • Minimal: {{
           trial.minimal_support }} • Moderate: {{ trial.moderate_support }} •
