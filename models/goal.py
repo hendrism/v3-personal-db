@@ -31,6 +31,21 @@ class Goal(BaseModel):
         total_progress = sum(obj.get_current_progress(db) for obj in objectives)
         return round(total_progress / len(objectives), 1)
 
+    def save(self, db):
+        """Save goal to database."""
+        if self.id:
+            db.execute('''
+                UPDATE goals SET description = ?, target_accuracy = ?
+                WHERE id = ?
+            ''', (self.description, self.target_accuracy, self.id))
+        else:
+            cursor = db.execute('''
+                INSERT INTO goals (student_id, description, target_accuracy)
+                VALUES (?, ?, ?)
+            ''', (self.student_id, self.description, self.target_accuracy))
+            self.id = cursor.lastrowid
+        db.commit()
+
     @classmethod
     def create(cls, db, data):
         cursor = db.execute('''
@@ -122,6 +137,21 @@ class Objective(BaseModel):
 
         cursor = db.execute(query, params)
         return [TrialLog.from_row(row) for row in cursor.fetchall()]
+
+    def save(self, db):
+        """Save objective to database."""
+        if self.id:
+            db.execute('''
+                UPDATE objectives SET description = ?, target_percentage = ?, notes = ?
+                WHERE id = ?
+            ''', (self.description, self.target_percentage, self.notes, self.id))
+        else:
+            cursor = db.execute('''
+                INSERT INTO objectives (goal_id, description, target_percentage, notes)
+                VALUES (?, ?, ?, ?)
+            ''', (self.goal_id, self.description, self.target_percentage, self.notes))
+            self.id = cursor.lastrowid
+        db.commit()
 
     @classmethod
     def create(cls, db, data):

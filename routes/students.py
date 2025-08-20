@@ -168,10 +168,9 @@ def edit_goal(goal_id):
     student = Student.get_by_id(db, goal.student_id)
 
     if request.method == 'POST':
-        # Update goal logic here
         goal.description = request.form['description']
         goal.target_accuracy = int(request.form.get('target_accuracy', 80))
-        # Add save method to Goal model or use direct SQL
+        goal.save(db)
         return redirect(url_for('students.student_detail', student_id=goal.student_id))
 
     return render_template('goal_form.html', goal=goal, student=student, edit_mode=True)
@@ -207,12 +206,10 @@ def edit_objective(objective_id):
     student = Student.get_by_id(db, goal.student_id)
 
     if request.method == 'POST':
-        # Update objective logic here
         objective.description = request.form['description']
-        objective.target_percentage = int(
-            request.form.get('target_percentage', 80))
+        objective.target_percentage = int(request.form.get('target_percentage', 80))
         objective.notes = request.form.get('notes', '')
-        # Add save method or use direct SQL
+        objective.save(db)
         return redirect(url_for('students.student_detail', student_id=goal.student_id))
 
     return render_template('objective_form.html', objective=objective, goal=goal, student=student, edit_mode=True)

@@ -68,6 +68,17 @@ class Session(BaseModel):
         return [cls.from_row(row) for row in cursor.fetchall()]
 
     @classmethod
+    def get_by_date(cls, db, date_obj):
+        """Get sessions by date."""
+        if hasattr(date_obj, 'isoformat'):
+            date_str = date_obj.isoformat()
+        else:
+            date_str = str(date_obj)
+        cursor = db.execute(
+            "SELECT * FROM sessions WHERE session_date = ? ORDER BY start_time", (date_str,))
+        return [cls.from_row(row) for row in cursor.fetchall()]
+
+    @classmethod
     def get_pending_soap_notes(cls, db):
         cursor = db.execute('''
             SELECT * FROM sessions s
