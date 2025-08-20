@@ -7,7 +7,10 @@
     <div class="page-header">
         <h1>Live Session Tracking</h1>
         <div style="display: flex; justify-content: space-between; align-items: center;">
-            <p class="text-muted">Track trials and data for multiple students in real-time</p>
+            <div>
+                <p class="text-muted">Track trials and data for multiple students in real-time</p>
+                <p style="font-size: 12px; color: #999; margin: 0;">Press <strong>?</strong> for keyboard shortcuts</p>
+            </div>
             <div style="display: flex; gap: 10px;">
                 <a href="/sessions" class="btn btn-outline">View Past Sessions</a>
                 <a href="/sessions/new" class="btn btn-secondary">Quick Add Session</a>
@@ -18,14 +21,25 @@
     <!-- Student Selection Section -->
     <div class="card">
         <h2>Add Students to Session</h2>
-        <div class="form-group">
-            <label for="student-select">Select Student:</label>
-            <select id="student-select" class="form-control">
-                <option value="">Choose a student...</option>
-                {% for student in students %}
-                <option value="{{ student.id }}">{{ student.display_name }}</option>
-                {% endfor %}
-            </select>
+        <div class="grid grid-2">
+            <div class="form-group">
+                <label for="student-select">Select Student:</label>
+                <select id="student-select" class="form-control">
+                    <option value="">Choose a student...</option>
+                    {% for student in students %}
+                    <option value="{{ student.id }}">{{ student.display_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="link-session-select">Link to Existing Session (Optional):</label>
+                <select id="link-session-select" class="form-control">
+                    <option value="">Create new session...</option>
+                    {% for session in recent_sessions %}
+                    <option value="{{ session.id }}">{{ session.student_name }} - {{ session.session_date }} ({{ session.session_type }})</option>
+                    {% endfor %}
+                </select>
+            </div>
         </div>
         <button id="add-student-btn" class="btn btn-primary">Add Student to Session</button>
     </div>
@@ -48,6 +62,18 @@
     <!-- Session Info and Save -->
     <div class="card" id="session-controls" style="display: none;">
         <h2>Session Information</h2>
+        
+        <!-- Quick Templates -->
+        <div class="form-group">
+            <label>Quick Session Templates:</label>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 5px;">
+                <button class="btn btn-sm btn-outline" onclick="sessionTracker.applyTemplate('individual30')">Individual 30min</button>
+                <button class="btn btn-sm btn-outline" onclick="sessionTracker.applyTemplate('individual60')">Individual 60min</button>
+                <button class="btn btn-sm btn-outline" onclick="sessionTracker.applyTemplate('group30')">Group 30min</button>
+                <button class="btn btn-sm btn-outline" onclick="sessionTracker.applyTemplate('pushin')">Push-in</button>
+            </div>
+        </div>
+        
         <div class="grid grid-2">
             <div class="form-group">
                 <label for="session-date">Session Date:</label>
@@ -60,6 +86,8 @@
                     <option value="Group">Group</option>
                     <option value="Push-in">Push-in</option>
                     <option value="Pull-out">Pull-out</option>
+                    <option value="Consultation">Consultation</option>
+                    <option value="Assessment">Assessment</option>
                 </select>
             </div>
         </div>
@@ -82,9 +110,10 @@
             <textarea id="session-notes" class="form-control" rows="3" placeholder="General session notes..."></textarea>
         </div>
         
-        <div style="display: flex; gap: 1rem; margin-top: 20px;">
-            <button id="save-session-btn" class="btn btn-success">Save Session Data</button>
-            <button id="clear-session-btn" class="btn btn-outline">Clear All Data</button>
+        <div style="display: flex; gap: 1rem; margin-top: 20px; flex-wrap: wrap;">
+            <button id="save-session-btn" class="btn btn-success">💾 Save Session Data</button>
+            <button id="clear-session-btn" class="btn btn-outline">🗑️ Clear All Data</button>
+            <button id="export-data-btn" class="btn btn-outline">📊 Export Data</button>
         </div>
     </div>
 </div>
@@ -176,6 +205,22 @@
                 <span class="accuracy">Accuracy: 0%</span>
             </div>
             <button class="reset-trials-btn btn btn-outline">Reset Trials</button>
+        </div>
+        
+        <!-- Detailed Breakdown -->
+        <div class="session-summary" style="margin-top: 10px; font-size: 12px;">
+            <div class="summary-row">
+                <span>Independent:</span>
+                <span class="independent-count">0</span>
+            </div>
+            <div class="summary-row">
+                <span>With Support:</span>
+                <span class="support-count">0</span>
+            </div>
+            <div class="summary-row">
+                <span>Incorrect:</span>
+                <span class="incorrect-count">0</span>
+            </div>
         </div>
         
         <!-- Notes -->
@@ -463,6 +508,64 @@
     margin-bottom: 5px;
     font-weight: bold;
 }
+
+/* Quick template buttons */
+.btn-sm {
+    padding: 5px 10px;
+    font-size: 12px;
+}
+
+.btn-outline {
+    background: white;
+    border: 1px solid #ddd;
+    color: #666;
+}
+
+.btn-outline:hover {
+    background: #f8f9fa;
+    border-color: #007bff;
+    color: #007bff;
+}
+
+/* Session summary */
+.session-summary {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+    border-left: 4px solid #007bff;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.summary-row:last-child {
+    margin-bottom: 0;
+    font-weight: bold;
+    padding-top: 10px;
+    border-top: 1px solid #ddd;
+}
+
+/* Keyboard shortcuts hint */
+.shortcuts-hint {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    z-index: 1000;
+    max-width: 200px;
+}
+
+.shortcuts-hint.hidden {
+    display: none;
+}
 </style>
 
 <script>
@@ -474,9 +577,11 @@ class SessionTracker {
         this.trialData = new Map(); // objective_id -> trial counts
         this.compactView = false; // toggle for compact/expanded view
         this.activeStudentId = null; // currently active student in compact view
+        this.linkedSessionId = null; // optional existing session to link trials to
         
         this.initializeEventListeners();
         this.setCurrentDateTime();
+        this.setupKeyboardShortcuts();
     }
     
     initializeEventListeners() {
@@ -493,6 +598,30 @@ class SessionTracker {
         // Clear all data
         document.getElementById('clear-session-btn').addEventListener('click', () => {
             this.clearAllData();
+        });
+        
+        // Export data
+        document.getElementById('export-data-btn').addEventListener('click', () => {
+            this.exportSessionData();
+        });
+        
+        // Link session selection
+        document.getElementById('link-session-select').addEventListener('change', (e) => {
+            this.linkedSessionId = e.target.value ? parseInt(e.target.value) : null;
+        });
+        
+        // Auto-calculate end time when start time changes
+        document.getElementById('start-time').addEventListener('change', (e) => {
+            if (e.target.value && !document.getElementById('end-time').value) {
+                const [hours, minutes] = e.target.value.split(':');
+                const endTime = new Date();
+                endTime.setHours(parseInt(hours), parseInt(minutes) + 30); // Default 30-minute session
+                
+                const endHours = endTime.getHours().toString().padStart(2, '0');
+                const endMinutes = endTime.getMinutes().toString().padStart(2, '0');
+                
+                document.getElementById('end-time').value = `${endHours}:${endMinutes}`;
+            }
         });
     }
     
@@ -864,10 +993,20 @@ class SessionTracker {
         // Update summary
         const total = Object.values(trials).reduce((sum, count) => sum + count, 0);
         const correct = trials.independent + trials.minimal_support + trials.moderate_support + trials.maximal_support;
+        const supportCount = trials.minimal_support + trials.moderate_support + trials.maximal_support;
         const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
         
         container.querySelector('.total-trials').textContent = `Total Trials: ${total}`;
         container.querySelector('.accuracy').textContent = `Accuracy: ${accuracy}%`;
+        
+        // Update detailed breakdown
+        const independentCount = container.querySelector('.independent-count');
+        const supportCountEl = container.querySelector('.support-count');
+        const incorrectCount = container.querySelector('.incorrect-count');
+        
+        if (independentCount) independentCount.textContent = trials.independent;
+        if (supportCountEl) supportCountEl.textContent = supportCount;
+        if (incorrectCount) incorrectCount.textContent = trials.incorrect;
     }
     
     removeObjective(objectiveId) {
@@ -907,8 +1046,6 @@ class SessionTracker {
             notes: document.getElementById('session-notes').value
         };
         
-        // For now, save each student's data separately
-        // In a real group session, you might want to create one session record
         for (const [studentId, studentData] of this.students) {
             const trials = [];
             
@@ -930,14 +1067,28 @@ class SessionTracker {
             });
             
             if (trials.length > 0) {
-                const payload = {
-                    student_id: studentId,
-                    ...sessionData,
-                    trials: trials
-                };
+                let payload;
+                let endpoint;
+                
+                if (this.linkedSessionId) {
+                    // Add trials to existing session
+                    payload = {
+                        session_id: this.linkedSessionId,
+                        trials: trials
+                    };
+                    endpoint = '/api/sessions/update-trials';
+                } else {
+                    // Create new session
+                    payload = {
+                        student_id: studentId,
+                        ...sessionData,
+                        trials: trials
+                    };
+                    endpoint = '/api/sessions/save-trials';
+                }
                 
                 try {
-                    const response = await fetch('/api/sessions/save-trials', {
+                    const response = await fetch(endpoint, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -957,7 +1108,11 @@ class SessionTracker {
             }
         }
         
-        alert('Session data saved successfully!');
+        if (this.linkedSessionId) {
+            alert('Trial data added to existing session successfully!');
+        } else {
+            alert('New session(s) created successfully!');
+        }
         this.clearAllData();
     }
     
@@ -974,15 +1129,213 @@ class SessionTracker {
             this.goals.clear();
             this.objectives.clear();
             this.trialData.clear();
+            this.linkedSessionId = null;
             
             document.getElementById('session-students-container').innerHTML = '';
             document.getElementById('session-controls').style.display = 'none';
             
             // Reset form fields
             document.getElementById('student-select').value = '';
+            document.getElementById('link-session-select').value = '';
             document.getElementById('session-notes').value = '';
             document.getElementById('location').value = '';
             this.setCurrentDateTime();
+            
+            // Update tabs
+            this.updateStudentTabs();
+        }
+    }
+    
+    applyTemplate(templateType) {
+        const now = new Date();
+        const currentTime = now.toTimeString().split(' ')[0].substring(0, 5);
+        
+        switch(templateType) {
+            case 'individual30':
+                document.getElementById('session-type').value = 'Individual';
+                document.getElementById('start-time').value = currentTime;
+                this.setEndTime(30);
+                break;
+                
+            case 'individual60':
+                document.getElementById('session-type').value = 'Individual';
+                document.getElementById('start-time').value = currentTime;
+                this.setEndTime(60);
+                break;
+                
+            case 'group30':
+                document.getElementById('session-type').value = 'Group';
+                document.getElementById('start-time').value = currentTime;
+                this.setEndTime(30);
+                break;
+                
+            case 'pushin':
+                document.getElementById('session-type').value = 'Push-in';
+                document.getElementById('start-time').value = currentTime;
+                this.setEndTime(45);
+                break;
+        }
+    }
+    
+    setEndTime(durationMinutes) {
+        const startTimeValue = document.getElementById('start-time').value;
+        if (startTimeValue) {
+            const [hours, minutes] = startTimeValue.split(':');
+            const endTime = new Date();
+            endTime.setHours(parseInt(hours), parseInt(minutes) + durationMinutes);
+            
+            const endHours = endTime.getHours().toString().padStart(2, '0');
+            const endMinutes = endTime.getMinutes().toString().padStart(2, '0');
+            
+            document.getElementById('end-time').value = `${endHours}:${endMinutes}`;
+        }
+    }
+    
+    exportSessionData() {
+        if (this.trialData.size === 0) {
+            alert('No trial data to export!');
+            return;
+        }
+        
+        const exportData = {
+            session_info: {
+                date: document.getElementById('session-date').value,
+                start_time: document.getElementById('start-time').value,
+                end_time: document.getElementById('end-time').value,
+                session_type: document.getElementById('session-type').value,
+                location: document.getElementById('location').value,
+                notes: document.getElementById('session-notes').value
+            },
+            students: []
+        };
+        
+        // Collect data for each student
+        for (const [studentId, studentData] of this.students) {
+            const studentTrials = [];
+            
+            document.querySelectorAll(`[data-student-id="${studentId}"] .objective-tracking`).forEach(objContainer => {
+                const objectiveId = parseInt(objContainer.dataset.objectiveId);
+                const trialCounts = this.trialData.get(objectiveId);
+                const notes = objContainer.querySelector('.objective-notes').value;
+                const objective = this.objectives.get(objectiveId);
+                
+                if (Object.values(trialCounts).some(count => count > 0)) {
+                    const total = Object.values(trialCounts).reduce((sum, count) => sum + count, 0);
+                    const correct = trialCounts.independent + trialCounts.minimal_support + trialCounts.moderate_support + trialCounts.maximal_support;
+                    const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+                    
+                    studentTrials.push({
+                        objective: objective.description,
+                        ...trialCounts,
+                        total_trials: total,
+                        accuracy_percent: accuracy,
+                        notes: notes
+                    });
+                }
+            });
+            
+            if (studentTrials.length > 0) {
+                exportData.students.push({
+                    name: studentData.name,
+                    trials: studentTrials
+                });
+            }
+        }
+        
+        // Create and download CSV
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "Student,Objective,Independent,Minimal Support,Moderate Support,Maximal Support,Incorrect,Total Trials,Accuracy %,Notes\n";
+        
+        exportData.students.forEach(student => {
+            student.trials.forEach(trial => {
+                csvContent += `"${student.name}","${trial.objective}",${trial.independent},${trial.minimal_support},${trial.moderate_support},${trial.maximal_support},${trial.incorrect},${trial.total_trials},${trial.accuracy_percent},"${trial.notes}"\n`;
+            });
+        });
+        
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        const dateStr = exportData.session_info.date || new Date().toISOString().split('T')[0];
+        link.setAttribute("download", `session_data_${dateStr}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        alert('Session data exported successfully!');
+    }
+    
+    setupKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            // Only process shortcuts when not typing in input fields
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+                return;
+            }
+            
+            switch(e.key) {
+                case 's':
+                case 'S':
+                    if (e.ctrlKey || e.metaKey) {
+                        e.preventDefault();
+                        this.saveSessionData();
+                    }
+                    break;
+                    
+                case 'c':
+                case 'C':
+                    if (e.ctrlKey || e.metaKey) {
+                        e.preventDefault();
+                        this.clearAllData();
+                    }
+                    break;
+                    
+                case 't':
+                case 'T':
+                    if (this.students.size > 0) {
+                        e.preventDefault();
+                        this.toggleStudentView();
+                    }
+                    break;
+                    
+                case 'e':
+                case 'E':
+                    if (e.ctrlKey || e.metaKey) {
+                        e.preventDefault();
+                        this.exportSessionData();
+                    }
+                    break;
+                    
+                case '?':
+                    e.preventDefault();
+                    this.toggleShortcutsHelp();
+                    break;
+            }
+        });
+    }
+    
+    toggleShortcutsHelp() {
+        let helpDiv = document.querySelector('.shortcuts-hint');
+        
+        if (!helpDiv) {
+            helpDiv = document.createElement('div');
+            helpDiv.className = 'shortcuts-hint';
+            helpDiv.innerHTML = `
+                <strong>Keyboard Shortcuts:</strong><br>
+                Ctrl+S: Save session<br>
+                Ctrl+C: Clear data<br>
+                Ctrl+E: Export data<br>
+                T: Toggle view<br>
+                ?: Show/hide this help
+            `;
+            document.body.appendChild(helpDiv);
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                if (helpDiv) {
+                    helpDiv.classList.add('hidden');
+                }
+            }, 5000);
+        } else {
+            helpDiv.classList.toggle('hidden');
         }
     }
 }

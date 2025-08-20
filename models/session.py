@@ -140,6 +140,9 @@ class Session(BaseModel):
 class TrialLog(BaseModel):
     """Enhanced trial log - now links to objectives."""
     table_name = 'trial_logs'
+    
+    # Support levels in order from most to least independent
+    SUPPORT_LEVELS = ['independent', 'minimal_support', 'moderate_support', 'maximal_support']
 
     def __init__(self, id=None, session_id=None, objective_id=None, goal_id=None,
                  independent=0, minimal_support=0, moderate_support=0, maximal_support=0,
@@ -172,6 +175,53 @@ class TrialLog(BaseModel):
         successful = (self.independent + self.minimal_support +
                       self.moderate_support + self.maximal_support)
         return round((successful / total) * 100, 1) if total > 0 else 0
+    
+    def total_trials_new(self):
+        """Calculate the total number of trials recorded using new columns."""
+        return (
+            (self.independent or 0) +
+            (self.minimal_support or 0) +
+            (self.moderate_support or 0) +
+            (self.maximal_support or 0) +
+            (self.incorrect or 0)
+        )
+
+    def percent_independent(self):
+        """Calculate the percentage of trials that were independent."""
+        total = self.total_trials_new()
+        return round(((self.independent or 0) / total) * 100, 1) if total > 0 else 0
+
+    def percent_minimal_support(self):
+        """Calculate the percentage of trials with minimal support."""
+        total = self.total_trials_new()
+        return round(((self.minimal_support or 0) / total) * 100, 1) if total > 0 else 0
+
+    def percent_moderate_support(self):
+        """Calculate the percentage of trials with moderate support."""
+        total = self.total_trials_new()
+        return round(((self.moderate_support or 0) / total) * 100, 1) if total > 0 else 0
+
+    def percent_maximal_support(self):
+        """Calculate the percentage of trials with maximal support."""
+        total = self.total_trials_new()
+        return round(((self.maximal_support or 0) / total) * 100, 1) if total > 0 else 0
+
+    def percent_incorrect(self):
+        """Calculate the percentage of trials that were incorrect."""
+        total = self.total_trials_new()
+        return round(((self.incorrect or 0) / total) * 100, 1) if total > 0 else 0
+
+    def percent_correct_up_to(self, support_level):
+        """
+        Return percent correct at or below the specified support level.
+        support_level: str, one of 'independent', 'minimal_support', 'moderate_support', 'maximal_support'
+        """
+        total = self.total_trials_new()
+        if total == 0 or support_level not in self.SUPPORT_LEVELS:
+            return 0.0
+        idx = self.SUPPORT_LEVELS.index(support_level) + 1
+        correct_sum = sum((getattr(self, lvl) or 0) for lvl in self.SUPPORT_LEVELS[:idx])
+        return round((correct_sum / total) * 100, 1)
 
     def get_objective(self, db):
         """Get the objective this trial log is for."""

@@ -141,7 +141,13 @@ def session_tracking():
     """Live session tracking interface for multiple students."""
     db = get_db()
     students = Student.get_active(db)
-    return render_template('session_tracking.html', students=students)
+    
+    # Get existing sessions for optional linking
+    recent_sessions = Session.get_recent_with_student_info(db, limit=20)
+    
+    return render_template('session_tracking.html', 
+                         students=students, 
+                         recent_sessions=recent_sessions)
 
 @sessions_bp.route('/api/students/<int:student_id>/goals')
 def get_student_goals(student_id):
@@ -208,5 +214,43 @@ def save_session_trials():
     return jsonify({
         'success': True,
         'session_id': session.id,
+        'trials_saved': len(saved_trials)
+    })
+
+@sessions_bp.route('/api/sessions/update-trials', methods=['POST'])
+def update_session_trials():
+    """Add trial data to an existing session."""
+    db = get_db()
+    data = request.get_json()
+    
+    session_id = data.get('session_id')
+    if not session_id:
+        return jsonify({'error': 'Session ID required'}), 400
+    
+    # Verify session exists
+    session = Session.get_by_id(db, session_id)
+    if not session:
+        return jsonify({'error': 'Session not found'}), 404
+    
+    # Save all trial data to the existing session
+    saved_trials = []
+    for trial_data in data['trials']:
+        trial_log_data = {
+            'session_id': session_id,
+            'objective_id': trial_data.get('objective_id'),
+            'goal_id': trial_data.get('goal_id'),
+            'independent': trial_data.get('independent', 0),
+            'minimal_support': trial_data.get('minimal_support', 0),
+            'moderate_support': trial_data.get('moderate_support', 0),
+            'maximal_support': trial_data.get('maximal_support', 0),
+            'incorrect': trial_data.get('incorrect', 0),
+            'notes': trial_data.get('notes', '')
+        }
+        trial = TrialLog.create(db, trial_log_data)
+        saved_trials.append(trial.to_dict())
+    
+    return jsonify({
+        'success': True,
+        'session_id': session_id,
         'trials_saved': len(saved_trials)
     })

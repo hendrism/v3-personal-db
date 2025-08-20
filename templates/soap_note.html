@@ -35,33 +35,111 @@
             
             {% if trial_logs %}
             <div style="margin-bottom: 1rem; padding: 1rem; background: #e9f7ef; border-radius: 4px;">
-                <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #27ae60;">📊 Session Trial Data - Click to Insert</h4>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px;">
-                    {% for trial in trial_logs %}
-                    <div class="trial-summary-card" onclick="insertTrialData({{ loop.index0 }})" style="
-                        padding: 10px; 
-                        background: white; 
-                        border: 1px solid #ddd; 
-                        border-radius: 4px; 
-                        cursor: pointer;
-                        transition: all 0.2s;
-                    ">
-                        <div style="font-weight: bold; font-size: 12px; margin-bottom: 5px;">
-                            {{ trial.objective_description[:40] + '...' if trial.objective_description|length > 40 else trial.objective_description }}
-                        </div>
+                <h4 style="margin: 0 0 15px 0; font-size: 14px; color: #27ae60;">📊 Session Trial Data</h4>
+                
+                {% for trial in trial_logs %}
+                <div class="trial-data-section" style="
+                    background: white; 
+                    border: 1px solid #ddd; 
+                    border-radius: 6px; 
+                    padding: 15px;
+                    margin-bottom: 15px;
+                ">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h5 style="margin: 0; font-size: 13px; color: #333;">
+                            {{ trial.objective_description[:50] + '...' if trial.objective_description|length > 50 else trial.objective_description }}
+                        </h5>
                         <div style="font-size: 11px; color: #666;">
-                            <div><strong>{{ trial.success_percentage }}% Success</strong> ({{ trial.total_trials }} trials)</div>
-                            <div style="margin-top: 3px;">
-                                Independent: {{ trial.independent }} |
-                                Min: {{ trial.minimal_support }} |
-                                Mod: {{ trial.moderate_support }} |
-                                Max: {{ trial.maximal_support }} |
-                                Incorrect: {{ trial.incorrect }}
-                            </div>
+                            {{ trial.total_trials_new() }} trials total
                         </div>
                     </div>
-                    {% endfor %}
+                    
+                    <!-- Individual Percentages Grid -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-bottom: 12px;">
+                        <div class="percentage-item">
+                            <input type="checkbox" id="trial_{{ loop.index0 }}_indep" class="percentage-checkbox" 
+                                   data-trial="{{ loop.index0 }}" data-type="independent" data-percentage="{{ trial.percent_independent() }}">
+                            <label for="trial_{{ loop.index0 }}_indep" style="font-size: 11px; margin-left: 5px;">
+                                <strong>{{ trial.percent_independent() }}%</strong> Independent
+                            </label>
+                        </div>
+                        
+                        <div class="percentage-item">
+                            <input type="checkbox" id="trial_{{ loop.index0 }}_min" class="percentage-checkbox"
+                                   data-trial="{{ loop.index0 }}" data-type="minimal_support" data-percentage="{{ trial.percent_minimal_support() }}">
+                            <label for="trial_{{ loop.index0 }}_min" style="font-size: 11px; margin-left: 5px;">
+                                <strong>{{ trial.percent_minimal_support() }}%</strong> Min Support
+                            </label>
+                        </div>
+                        
+                        <div class="percentage-item">
+                            <input type="checkbox" id="trial_{{ loop.index0 }}_mod" class="percentage-checkbox"
+                                   data-trial="{{ loop.index0 }}" data-type="moderate_support" data-percentage="{{ trial.percent_moderate_support() }}">
+                            <label for="trial_{{ loop.index0 }}_mod" style="font-size: 11px; margin-left: 5px;">
+                                <strong>{{ trial.percent_moderate_support() }}%</strong> Mod Support
+                            </label>
+                        </div>
+                        
+                        <div class="percentage-item">
+                            <input type="checkbox" id="trial_{{ loop.index0 }}_max" class="percentage-checkbox"
+                                   data-trial="{{ loop.index0 }}" data-type="maximal_support" data-percentage="{{ trial.percent_maximal_support() }}">
+                            <label for="trial_{{ loop.index0 }}_max" style="font-size: 11px; margin-left: 5px;">
+                                <strong>{{ trial.percent_maximal_support() }}%</strong> Max Support
+                            </label>
+                        </div>
+                        
+                        <div class="percentage-item">
+                            <input type="checkbox" id="trial_{{ loop.index0 }}_incorrect" class="percentage-checkbox"
+                                   data-trial="{{ loop.index0 }}" data-type="incorrect" data-percentage="{{ trial.percent_incorrect() }}">
+                            <label for="trial_{{ loop.index0 }}_incorrect" style="font-size: 11px; margin-left: 5px;">
+                                <strong>{{ trial.percent_incorrect() }}%</strong> Incorrect
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Combined Accuracy Levels -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 12px; padding-top: 8px; border-top: 1px solid #eee;">
+                        <div class="percentage-item">
+                            <input type="checkbox" id="trial_{{ loop.index0 }}_up_to_indep" class="percentage-checkbox"
+                                   data-trial="{{ loop.index0 }}" data-type="up_to_independent" data-percentage="{{ trial.percent_correct_up_to('independent') }}">
+                            <label for="trial_{{ loop.index0 }}_up_to_indep" style="font-size: 11px; margin-left: 5px;">
+                                <strong>{{ trial.percent_correct_up_to('independent') }}%</strong> Independent Only
+                            </label>
+                        </div>
+                        
+                        <div class="percentage-item">
+                            <input type="checkbox" id="trial_{{ loop.index0 }}_up_to_min" class="percentage-checkbox"
+                                   data-trial="{{ loop.index0 }}" data-type="up_to_minimal" data-percentage="{{ trial.percent_correct_up_to('minimal_support') }}">
+                            <label for="trial_{{ loop.index0 }}_up_to_min" style="font-size: 11px; margin-left: 5px;">
+                                <strong>{{ trial.percent_correct_up_to('minimal_support') }}%</strong> Up to Min Support
+                            </label>
+                        </div>
+                        
+                        <div class="percentage-item">
+                            <input type="checkbox" id="trial_{{ loop.index0 }}_up_to_mod" class="percentage-checkbox"
+                                   data-trial="{{ loop.index0 }}" data-type="up_to_moderate" data-percentage="{{ trial.percent_correct_up_to('moderate_support') }}">
+                            <label for="trial_{{ loop.index0 }}_up_to_mod" style="font-size: 11px; margin-left: 5px;">
+                                <strong>{{ trial.percent_correct_up_to('moderate_support') }}%</strong> Up to Mod Support
+                            </label>
+                        </div>
+                        
+                        <div class="percentage-item">
+                            <input type="checkbox" id="trial_{{ loop.index0 }}_up_to_max" class="percentage-checkbox"
+                                   data-trial="{{ loop.index0 }}" data-type="up_to_maximal" data-percentage="{{ trial.percent_correct_up_to('maximal_support') }}">
+                            <label for="trial_{{ loop.index0 }}_up_to_max" style="font-size: 11px; margin-left: 5px;">
+                                <strong>{{ trial.percent_correct_up_to('maximal_support') }}%</strong> Up to Max Support
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Insert Button -->
+                    <div style="text-align: center;">
+                        <button type="button" class="btn btn-sm btn-primary" onclick="insertSelectedPercentages({{ loop.index0 }})">
+                            Insert Selected Percentages
+                        </button>
+                    </div>
                 </div>
+                {% endfor %}
             </div>
             {% endif %}
             
@@ -102,10 +180,38 @@
 </div>
 
 <style>
-.trial-summary-card:hover {
-    background-color: #f8f9fa !important;
-    border-color: #27ae60 !important;
-    transform: translateY(-1px);
+.percentage-item {
+    display: flex;
+    align-items: center;
+    padding: 4px;
+    background: #f8f9fa;
+    border-radius: 3px;
+    transition: background-color 0.2s;
+}
+
+.percentage-item:hover {
+    background: #e9ecef;
+}
+
+.percentage-checkbox {
+    margin: 0;
+    cursor: pointer;
+}
+
+.percentage-item label {
+    cursor: pointer;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+}
+
+.trial-data-section {
+    transition: all 0.3s;
+}
+
+.trial-data-section:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .form-group textarea {
@@ -139,29 +245,79 @@
         {% for trial in trial_logs %}
         {
             objective: "{{ trial.objective_description }}",
-            success_percentage: {{ trial.success_percentage }},
-            total_trials: {{ trial.total_trials }},
-            independent: {{ trial.independent }},
-            minimal_support: {{ trial.minimal_support }},
-            moderate_support: {{ trial.moderate_support }},
-            maximal_support: {{ trial.maximal_support }},
-            incorrect: {{ trial.incorrect }}
+            total_trials: {{ trial.total_trials_new() }},
+            percentages: {
+                independent: {{ trial.percent_independent() }},
+                minimal_support: {{ trial.percent_minimal_support() }},
+                moderate_support: {{ trial.percent_moderate_support() }},
+                maximal_support: {{ trial.percent_maximal_support() }},
+                incorrect: {{ trial.percent_incorrect() }},
+                up_to_independent: {{ trial.percent_correct_up_to('independent') }},
+                up_to_minimal: {{ trial.percent_correct_up_to('minimal_support') }},
+                up_to_moderate: {{ trial.percent_correct_up_to('moderate_support') }},
+                up_to_maximal: {{ trial.percent_correct_up_to('maximal_support') }}
+            }
         }{% if not loop.last %},{% endif %}
         {% endfor %}
     ];
     
-    function insertTrialData(index) {
-        const trial = trialData[index];
+    function insertSelectedPercentages(trialIndex) {
+        const trial = trialData[trialIndex];
         const objectiveTextArea = document.getElementById('objective');
         
-        // Format the trial data text
-        const trialText = `${trial.objective}: Completed ${trial.total_trials} trials with ${trial.success_percentage}% accuracy. Breakdown: Independent: ${trial.independent}, Minimal support: ${trial.minimal_support}, Moderate support: ${trial.moderate_support}, Maximal support: ${trial.maximal_support}, Incorrect: ${trial.incorrect}.`;
+        // Get all selected checkboxes for this trial
+        const selectedCheckboxes = document.querySelectorAll(`input[data-trial="${trialIndex}"]:checked`);
         
-        // Insert at cursor position or append
+        if (selectedCheckboxes.length === 0) {
+            alert('Please select at least one percentage to insert.');
+            return;
+        }
+        
+        // Build the text based on selected percentages
+        let percentageTexts = [];
+        selectedCheckboxes.forEach(checkbox => {
+            const type = checkbox.dataset.type;
+            const percentage = checkbox.dataset.percentage;
+            
+            switch(type) {
+                case 'independent':
+                    percentageTexts.push(`${percentage}% independent`);
+                    break;
+                case 'minimal_support':
+                    percentageTexts.push(`${percentage}% with minimal support`);
+                    break;
+                case 'moderate_support':
+                    percentageTexts.push(`${percentage}% with moderate support`);
+                    break;
+                case 'maximal_support':
+                    percentageTexts.push(`${percentage}% with maximal support`);
+                    break;
+                case 'incorrect':
+                    percentageTexts.push(`${percentage}% incorrect`);
+                    break;
+                case 'up_to_independent':
+                    percentageTexts.push(`${percentage}% accuracy when considering independent responses only`);
+                    break;
+                case 'up_to_minimal':
+                    percentageTexts.push(`${percentage}% accuracy with minimal support or better`);
+                    break;
+                case 'up_to_moderate':
+                    percentageTexts.push(`${percentage}% accuracy with moderate support or better`);
+                    break;
+                case 'up_to_maximal':
+                    percentageTexts.push(`${percentage}% accuracy with any level of support`);
+                    break;
+            }
+        });
+        
+        // Format the complete text
+        const trialText = `${trial.objective}: Completed ${trial.total_trials} trials. ${percentageTexts.join(', ')}.`;
+        
+        // Insert at cursor position
         const currentValue = objectiveTextArea.value;
         const cursorPos = objectiveTextArea.selectionStart;
         const newValue = currentValue.slice(0, cursorPos) + 
-                        (currentValue ? ' ' : '') + trialText + 
+                        (currentValue && cursorPos > 0 ? ' ' : '') + trialText + 
                         (currentValue.slice(cursorPos) ? ' ' : '') + 
                         currentValue.slice(cursorPos);
         
@@ -169,8 +325,13 @@
         objectiveTextArea.focus();
         
         // Position cursor after inserted text
-        const newCursorPos = cursorPos + trialText.length + (currentValue ? 1 : 0);
+        const newCursorPos = cursorPos + trialText.length + (currentValue && cursorPos > 0 ? 1 : 0);
         objectiveTextArea.setSelectionRange(newCursorPos, newCursorPos);
+        
+        // Clear selections for this trial
+        selectedCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
     }
 
     const templates = {
