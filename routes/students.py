@@ -118,8 +118,12 @@ def student_schedule(student_id):
         classes = {}
         for period in range(1,9):
             class_name = request.form.get(f'period_{period}', '').strip()
-            if class_name:
-                classes[str(period)] = class_name
+            room_number = request.form.get(f'room_{period}', '').strip()
+            if class_name or room_number:
+                classes[str(period)] = {
+                    'name': class_name,
+                    'room': room_number
+                }
         schedule.classes = classes
         schedule.save(db)
         return redirect(url_for('students.student_detail', student_id=student_id))

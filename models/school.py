@@ -99,7 +99,12 @@ class School:
 
 
 class StudentSchedule:
-    """Link students to schools and track their class schedules."""
+    """Link students to schools and track their class schedules.
+
+    The ``classes`` attribute stores a JSON object mapping period numbers to
+    dictionaries with ``name`` and ``room`` keys.  Older records may only have a
+    string class name; the application handles both formats.
+    """
     def __init__(self, id=None, student_id=None, school_id=None, lunch_type='A',
                  classes=None, created_at=None):
         self.id = id

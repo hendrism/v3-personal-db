@@ -400,9 +400,13 @@ Details{% endblock %} {% block content %}
       {% if student_schedule.classes %}
       <h4>Class Schedule:</h4>
       <div class="grid grid-2">
-        {% for period, class_name in student_schedule.classes.items() %}
+        {% for period, class_info in student_schedule.classes.items() %}
         <div style="padding: 5px">
-          <strong>Period {{ period }}:</strong> {{ class_name }}
+          {% if class_info is mapping %}
+            <strong>Period {{ period }}:</strong> {{ class_info.name }}{% if class_info.room %} (Room {{ class_info.room }}){% endif %}
+          {% else %}
+            <strong>Period {{ period }}:</strong> {{ class_info }}
+          {% endif %}
         </div>
         {% endfor %}
       </div>
