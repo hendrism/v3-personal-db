@@ -6,7 +6,8 @@ class Student(BaseModel):
 
     def __init__(self, id=None, first_name='', last_name='', preferred_name='',
                  pronouns='', grade_level='', notes='', active=True,
-                 created_at=None, updated_at=None):
+                 created_at=None, updated_at=None, next_annual_review=None,
+                 next_triennial_assessment=None):
         self.id = id
         self.first_name = first_name
         self.last_name = last_name
@@ -17,6 +18,8 @@ class Student(BaseModel):
         self.active = active
         self.created_at = created_at
         self.updated_at = updated_at
+        self.next_annual_review = next_annual_review
+        self.next_triennial_assessment = next_triennial_assessment
 
     @property
     def display_name(self):
@@ -41,10 +44,11 @@ class Student(BaseModel):
     @classmethod
     def create(cls, db, data):
         cursor = db.execute('''
-            INSERT INTO students (first_name, last_name, preferred_name, pronouns, grade_level, notes)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO students (first_name, last_name, preferred_name, pronouns, grade_level, notes, next_annual_review, next_triennial_assessment)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ''', (data['first_name'], data['last_name'], data.get('preferred_name'),
-              data.get('pronouns'), data.get('grade_level'), data.get('notes')))
+              data.get('pronouns'), data.get('grade_level'), data.get('notes'),
+              data.get('next_annual_review'), data.get('next_triennial_assessment')))
 
         student_id = cursor.lastrowid
         db.commit()

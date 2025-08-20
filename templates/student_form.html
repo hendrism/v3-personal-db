@@ -1,38 +1,38 @@
 {% extends "base.html" %}
 
-{% block title %}Add New Student - Personal Student Database{% endblock %}
+{% block title %}{% if edit_mode %}Edit Student{% else %}Add New Student{% endif %} - Personal Student Database{% endblock %}
 
 {% block content %}
 <div class="card">
-    <h2>Add New Student</h2>
+    <h2>{% if edit_mode %}Edit Student{% else %}Add New Student{% endif %}</h2>
     
     <form method="POST">
         <div class="grid grid-2">
             <div class="form-group">
                 <label for="first_name">First Name *</label>
-                <input type="text" id="first_name" name="first_name" required>
+                <input type="text" id="first_name" name="first_name" value="{{ student.first_name if student else '' }}" required>
             </div>
             
             <div class="form-group">
                 <label for="last_name">Last Name *</label>
-                <input type="text" id="last_name" name="last_name" required>
+                <input type="text" id="last_name" name="last_name" value="{{ student.last_name if student else '' }}" required>
             </div>
         </div>
         
         <div class="grid grid-2">
             <div class="form-group">
                 <label for="preferred_name">Preferred Name</label>
-                <input type="text" id="preferred_name" name="preferred_name">
+                <input type="text" id="preferred_name" name="preferred_name" value="{{ student.preferred_name if student else '' }}">
             </div>
             
             <div class="form-group">
                 <label for="pronouns">Pronouns</label>
                 <select id="pronouns" name="pronouns">
                     <option value="">Select pronouns</option>
-                    <option value="he/him">he/him</option>
-                    <option value="she/her">she/her</option>
-                    <option value="they/them">they/them</option>
-                    <option value="other">other</option>
+                    <option value="he/him" {{ 'selected' if student and student.pronouns == 'he/him' else '' }}>he/him</option>
+                    <option value="she/her" {{ 'selected' if student and student.pronouns == 'she/her' else '' }}>she/her</option>
+                    <option value="they/them" {{ 'selected' if student and student.pronouns == 'they/them' else '' }}>they/them</option>
+                    <option value="other" {{ 'selected' if student and student.pronouns == 'other' else '' }}>other</option>
                 </select>
             </div>
         </div>
@@ -41,31 +41,43 @@
             <label for="grade_level">Grade Level</label>
             <select id="grade_level" name="grade_level">
                 <option value="">Select grade level</option>
-                <option value="Pre-K">Pre-K</option>
-                <option value="Kindergarten">Kindergarten</option>
-                <option value="1st Grade">1st Grade</option>
-                <option value="2nd Grade">2nd Grade</option>
-                <option value="3rd Grade">3rd Grade</option>
-                <option value="4th Grade">4th Grade</option>
-                <option value="5th Grade">5th Grade</option>
-                <option value="6th Grade">6th Grade</option>
-                <option value="7th Grade">7th Grade</option>
-                <option value="8th Grade">8th Grade</option>
-                <option value="9th Grade">9th Grade</option>
-                <option value="10th Grade">10th Grade</option>
-                <option value="11th Grade">11th Grade</option>
-                <option value="12th Grade">12th Grade</option>
+                <option value="Pre-K" {{ 'selected' if student and student.grade_level == 'Pre-K' else '' }}>Pre-K</option>
+                <option value="Kindergarten" {{ 'selected' if student and student.grade_level == 'Kindergarten' else '' }}>Kindergarten</option>
+                <option value="1st Grade" {{ 'selected' if student and student.grade_level == '1st Grade' else '' }}>1st Grade</option>
+                <option value="2nd Grade" {{ 'selected' if student and student.grade_level == '2nd Grade' else '' }}>2nd Grade</option>
+                <option value="3rd Grade" {{ 'selected' if student and student.grade_level == '3rd Grade' else '' }}>3rd Grade</option>
+                <option value="4th Grade" {{ 'selected' if student and student.grade_level == '4th Grade' else '' }}>4th Grade</option>
+                <option value="5th Grade" {{ 'selected' if student and student.grade_level == '5th Grade' else '' }}>5th Grade</option>
+                <option value="6th Grade" {{ 'selected' if student and student.grade_level == '6th Grade' else '' }}>6th Grade</option>
+                <option value="7th Grade" {{ 'selected' if student and student.grade_level == '7th Grade' else '' }}>7th Grade</option>
+                <option value="8th Grade" {{ 'selected' if student and student.grade_level == '8th Grade' else '' }}>8th Grade</option>
+                <option value="9th Grade" {{ 'selected' if student and student.grade_level == '9th Grade' else '' }}>9th Grade</option>
+                <option value="10th Grade" {{ 'selected' if student and student.grade_level == '10th Grade' else '' }}>10th Grade</option>
+                <option value="11th Grade" {{ 'selected' if student and student.grade_level == '11th Grade' else '' }}>11th Grade</option>
+                <option value="12th Grade" {{ 'selected' if student and student.grade_level == '12th Grade' else '' }}>12th Grade</option>
             </select>
+        </div>
+        
+        <div class="grid grid-2">
+            <div class="form-group">
+                <label for="next_annual_review">Next Annual Review</label>
+                <input type="date" id="next_annual_review" name="next_annual_review" value="{{ student.next_annual_review if student else '' }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="next_triennial_assessment">Next Triennial Assessment</label>
+                <input type="date" id="next_triennial_assessment" name="next_triennial_assessment" value="{{ student.next_triennial_assessment if student else '' }}">
+            </div>
         </div>
         
         <div class="form-group">
             <label for="notes">Notes</label>
-            <textarea id="notes" name="notes" rows="3" placeholder="Any additional notes about the student..."></textarea>
+            <textarea id="notes" name="notes" rows="3" placeholder="Any additional notes about the student...">{{ student.notes if student else '' }}</textarea>
         </div>
         
         <div style="display: flex; gap: 1rem;">
-            <button type="submit" class="btn btn-success">Create Student</button>
-            <a href="/students" class="btn">Cancel</a>
+            <button type="submit" class="btn btn-success">{% if edit_mode %}Update Student{% else %}Create Student{% endif %}</button>
+            <a href="{% if edit_mode %}/students/{{ student.id }}{% else %}/students{% endif %}" class="btn">Cancel</a>
         </div>
     </form>
 </div>

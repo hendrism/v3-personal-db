@@ -12,7 +12,10 @@ Details{% endblock %} {% block content %}
 
   <!-- Student Info Card -->
   <div class="card">
-    <h2>Student Information</h2>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+      <h2>Student Information</h2>
+      <a href="/students/{{ student.id }}/edit" class="btn btn-primary">Edit Student</a>
+    </div>
     <div class="grid grid-2">
       <div>
         <strong>Full Name:</strong> {{ student.full_name }}<br />
@@ -29,6 +32,12 @@ Details{% endblock %} {% block content %}
         <strong>School:</strong> {{ schools[student_schedule.school_id].name if
         student_schedule.school_id in schools else 'Not assigned' }}<br />
         <strong>Lunch:</strong> {{ student_schedule.lunch_type }}<br />
+        {% endif %}
+        {% if student.next_annual_review %}
+        <strong>Next Annual Review:</strong> {{ student.next_annual_review }}<br />
+        {% endif %}
+        {% if student.next_triennial_assessment %}
+        <strong>Next Triennial Assessment:</strong> {{ student.next_triennial_assessment }}<br />
         {% endif %}
         <strong>Active:</strong> {{ "Yes" if student.active else "No" }}
       </div>

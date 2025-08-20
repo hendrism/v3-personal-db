@@ -62,11 +62,39 @@ def new_student():
             'grade_level': request.form.get('grade_level'),
             'preferred_name': request.form.get('preferred_name'),
             'pronouns': request.form.get('pronouns'),
-            'notes': request.form.get('notes')
+            'notes': request.form.get('notes'),
+            'next_annual_review': request.form.get('next_annual_review') or None,
+            'next_triennial_assessment': request.form.get('next_triennial_assessment') or None
         }
         student = Student.create(db, student_data)
         return redirect(url_for('students.student_detail', student_id=student.id))
     return render_template('student_form.html')
+
+@students_bp.route('/students/<int:student_id>/edit', methods=['GET', 'POST'])
+def edit_student(student_id):
+    """Edit student information."""
+    db = get_db()
+    student = Student.get_by_id(db, student_id)
+    if not student:
+        return "Student not found", 404
+    
+    if request.method == 'POST':
+        db.execute('''
+            UPDATE students 
+            SET first_name = ?, last_name = ?, grade_level = ?, preferred_name = ?, 
+                pronouns = ?, notes = ?, next_annual_review = ?, next_triennial_assessment = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        ''', (request.form['first_name'], request.form['last_name'],
+              request.form.get('grade_level'), request.form.get('preferred_name'),
+              request.form.get('pronouns'), request.form.get('notes'),
+              request.form.get('next_annual_review') or None,
+              request.form.get('next_triennial_assessment') or None,
+              student_id))
+        db.commit()
+        return redirect(url_for('students.student_detail', student_id=student_id))
+    
+    return render_template('student_form.html', student=student, edit_mode=True)
 
 @students_bp.route('/students/<int:student_id>/goals/new', methods=['GET', 'POST'])
 def new_goal(student_id):
