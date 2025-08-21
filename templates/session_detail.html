@@ -86,7 +86,7 @@
                     <h3>{{ student.display_name if student else 'Student' }}</h3>
                     <div class="student-summary">
                         {% set student_total_trials = student_trials | sum(attribute='total_trials') %}
-                        {% set student_accuracy = (student_trials | map('percent_correct_up_to', 'maximal_support') | sum / student_trials|length) | round(1) if student_trials|length > 0 else 0 %}
+                        {% set student_accuracy = ((student_trials | sum(attribute='independent') + student_trials | sum(attribute='minimal_support') + student_trials | sum(attribute='moderate_support') + student_trials | sum(attribute='maximal_support')) / student_trials | sum(attribute='total_trials') * 100) | round(1) if (student_trials | sum(attribute='total_trials')) > 0 else 0 %}
                         <span>{{ student_trials|length }} objectives • {{ student_total_trials }} trials • {{ student_accuracy }}% avg accuracy</span>
                     </div>
                 </div>
@@ -123,7 +123,7 @@
                                 <div class="trial-header">
                                     <div class="trial-summary">
                                         <strong>{{ trial.total_trials_new() }} trials</strong>
-                                        <span class="accuracy-badge">{{ trial.percent_correct_up_to('maximal_support') }}% accuracy</span>
+                                        <span class="accuracy-badge">{{ trial.success_percentage }}% accuracy</span>
                                     </div>
                                     {% if trial.notes %}
                                     <div class="trial-notes">{{ trial.notes }}</div>

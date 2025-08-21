@@ -16,7 +16,7 @@
         <strong>{{ session.student_name }}</strong> • {{ session.session_date }} • {{ session.session_type }}
     </div>
     
-    {% if soap_note and soap_note.subjective and soap_note.objective and soap_note.assessment and soap_note.plan %}
+    {% if soap_note and soap_note.subjective and soap_note.objective and soap_note.assessment and soap_note.plan and not edit_mode %}
     <!-- View Mode: Show complete SOAP note as formatted text -->
     <div class="soap-note-view">
         <div style="background: #f8f9fa; padding: 25px; border-radius: 8px; font-family: 'Georgia', serif; line-height: 1.8; margin-bottom: 20px;">
@@ -91,33 +91,33 @@
                     <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 12px;">
                         <div class="percentage-item">
                             <input type="checkbox" id="trial_{{ loop.index0 }}_indep_only" class="percentage-checkbox"
-                                   data-trial="{{ loop.index0 }}" data-type="independent_only" data-percentage="{{ trial.percent_correct_up_to('independent') }}">
+                                   data-trial="{{ loop.index0 }}" data-type="independent_only" data-percentage="{{ trial.percent_independent() }}">
                             <label for="trial_{{ loop.index0 }}_indep_only" style="font-size: 11px; margin-left: 5px;">
-                                <strong>{{ trial.percent_correct_up_to('independent') }}%</strong> Independent
+                                <strong>{{ trial.percent_independent() }}%</strong> Independent
                             </label>
                         </div>
                         
                         <div class="percentage-item">
                             <input type="checkbox" id="trial_{{ loop.index0 }}_min_or_better" class="percentage-checkbox"
-                                   data-trial="{{ loop.index0 }}" data-type="min_support_or_better" data-percentage="{{ trial.percent_correct_up_to('minimal_support') }}">
+                                   data-trial="{{ loop.index0 }}" data-type="min_support_or_better" data-percentage="{{ ((trial.independent or 0) + (trial.minimal_support or 0)) / trial.total_trials_new() * 100 if trial.total_trials_new() > 0 else 0 | round(1) }}">
                             <label for="trial_{{ loop.index0 }}_min_or_better" style="font-size: 11px; margin-left: 5px;">
-                                <strong>{{ trial.percent_correct_up_to('minimal_support') }}%</strong> Min Support or Better
+                                <strong>{{ ((trial.independent or 0) + (trial.minimal_support or 0)) / trial.total_trials_new() * 100 if trial.total_trials_new() > 0 else 0 | round(1) }}%</strong> Min Support or Better
                             </label>
                         </div>
                         
                         <div class="percentage-item">
                             <input type="checkbox" id="trial_{{ loop.index0 }}_mod_or_better" class="percentage-checkbox"
-                                   data-trial="{{ loop.index0 }}" data-type="mod_support_or_better" data-percentage="{{ trial.percent_correct_up_to('moderate_support') }}">
+                                   data-trial="{{ loop.index0 }}" data-type="mod_support_or_better" data-percentage="{{ ((trial.independent or 0) + (trial.minimal_support or 0) + (trial.moderate_support or 0)) / trial.total_trials_new() * 100 if trial.total_trials_new() > 0 else 0 | round(1) }}">
                             <label for="trial_{{ loop.index0 }}_mod_or_better" style="font-size: 11px; margin-left: 5px;">
-                                <strong>{{ trial.percent_correct_up_to('moderate_support') }}%</strong> Mod Support or Better
+                                <strong>{{ ((trial.independent or 0) + (trial.minimal_support or 0) + (trial.moderate_support or 0)) / trial.total_trials_new() * 100 if trial.total_trials_new() > 0 else 0 | round(1) }}%</strong> Mod Support or Better
                             </label>
                         </div>
                         
                         <div class="percentage-item">
                             <input type="checkbox" id="trial_{{ loop.index0 }}_max_or_better" class="percentage-checkbox"
-                                   data-trial="{{ loop.index0 }}" data-type="max_support_or_better" data-percentage="{{ trial.percent_correct_up_to('maximal_support') }}">
+                                   data-trial="{{ loop.index0 }}" data-type="max_support_or_better" data-percentage="{{ trial.success_percentage }}">
                             <label for="trial_{{ loop.index0 }}_max_or_better" style="font-size: 11px; margin-left: 5px;">
-                                <strong>{{ trial.percent_correct_up_to('maximal_support') }}%</strong> Max Support or Better
+                                <strong>{{ trial.success_percentage }}%</strong> Max Support or Better
                             </label>
                         </div>
                     </div>
@@ -263,10 +263,10 @@
             objective: "{{ trial.objective_description }}",
             total_trials: {{ trial.total_trials_new() }},
             percentages: {
-                independent_only: {{ trial.percent_correct_up_to('independent') }},
-                min_support_or_better: {{ trial.percent_correct_up_to('minimal_support') }},
-                mod_support_or_better: {{ trial.percent_correct_up_to('moderate_support') }},
-                max_support_or_better: {{ trial.percent_correct_up_to('maximal_support') }}
+                independent_only: {{ trial.percent_independent() }},
+                min_support_or_better: {{ ((trial.independent or 0) + (trial.minimal_support or 0)) / trial.total_trials_new() * 100 if trial.total_trials_new() > 0 else 0 | round(1) }},
+                mod_support_or_better: {{ ((trial.independent or 0) + (trial.minimal_support or 0) + (trial.moderate_support or 0)) / trial.total_trials_new() * 100 if trial.total_trials_new() > 0 else 0 | round(1) }},
+                max_support_or_better: {{ trial.success_percentage }}
             }
         }{% if not loop.last %},{% endif %}
         {% endfor %}

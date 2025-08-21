@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Add Students to Group Session{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 class="mb-0">Add Students to Group Session</h2>
+        <a href="/dashboard" class="btn btn-outline">Cancel</a>
+    </div>
+    
+    <!-- Session Info -->
+    <div style="margin-bottom: 2rem; padding: 1rem; background: #e9f7ef; border-radius: 4px;">
+        <h3 style="margin-top: 0; color: #27ae60;">Group Session Details</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+            <div><strong>Date:</strong> {{ session.session_date }}</div>
+            <div><strong>Time:</strong> 
+                {% if session.start_time and session.end_time %}
+                    {{ session.start_time_12h }} - {{ session.end_time_12h }}
+                {% elif session.start_time %}
+                    {{ session.start_time_12h }}
+                {% else %}
+                    Not set
+                {% endif %}
+            </div>
+            <div><strong>Type:</strong> {{ session.session_type }}</div>
+            {% if session.location %}
+            <div><strong>Location:</strong> {{ session.location }}</div>
+            {% endif %}
+        </div>
+        {% if session.notes %}
+        <div style="margin-top: 10px;"><strong>Notes:</strong> {{ session.notes }}</div>
+        {% endif %}
+    </div>
+    
+    <!-- Students Already in Session -->
+    {% if existing_students %}
+    <div class="card" style="margin-bottom: 2rem; border-left: 4px solid #007bff;">
+        <h3 style="color: #007bff;">Students in This Group Session ({{ existing_students|length }})</h3>
+        <div class="students-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px;">
+            {% for student_row in existing_students %}
+            <div style="padding: 10px; background: #f8f9fa; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong>{{ student_row.first_name }} {{ student_row.last_name }}</strong>
+                </div>
+                <a href="/students/{{ student_row.student_id }}" class="btn btn-sm btn-outline">View Profile</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Add More Students -->
+    {% if available_students %}
+    <div class="card">
+        <h3 style="color: #28a745;">Add Another Student</h3>
+        
+        <form method="POST">
+            <input type="hidden" name="action" value="add_student">
+            
+            <div class="form-group">
+                <label for="student_id">Select Student to Add:</label>
+                <select id="student_id" name="student_id" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    <option value="">Choose a student...</option>
+                    {% for student in available_students %}
+                    <option value="{{ student.id }}">{{ student.display_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <button type="submit" class="btn btn-success">➕ Add This Student</button>
+                <span class="text-muted">The student will be added to the same group session</span>
+            </div>
+        </form>
+    </div>
+    {% else %}
+    <div class="card" style="text-align: center; color: #6c757d;">
+        <h3>All Available Students Added</h3>
+        <p>All active students are already part of this group session.</p>
+    </div>
+    {% endif %}
+    
+    <!-- Finish Adding -->
+    <div class="card" style="border: 2px solid #28a745; text-align: center;">
+        <h3 style="color: #28a745;">Finished Adding Students?</h3>
+        <p class="text-muted">When you're done adding students to this group session, click the button below.</p>
+        
+        <form method="POST" style="display: inline;">
+            <input type="hidden" name="action" value="done_adding">
+            <button type="submit" class="btn btn-success btn-lg">✅ Done Adding Students</button>
+        </form>
+        
+        <div style="margin-top: 15px;">
+            <a href="/sessions/track?linked_session={{ session.id }}" class="btn btn-primary">🎯 Start Live Tracking for This Group</a>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.students-grid {
+    margin-top: 15px;
+}
+
+.text-muted {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.btn-lg {
+    padding: 12px 24px;
+    font-size: 1.1rem;
+}
+</style>
+
+<script>
+// Auto-focus the student select when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    const selectElement = document.getElementById('student_id');
+    if (selectElement && selectElement.options.length > 1) {
+        selectElement.focus();
+    }
+});
+
+// Confirm before leaving if there are available students
+window.addEventListener('beforeunload', function(e) {
+    const availableStudents = {{ available_students|length if available_students else 0 }};
+    const existingStudents = {{ existing_students|length if existing_students else 0 }};
+    
+    if (availableStudents > 0 && existingStudents > 0) {
+        const message = 'You still have students available to add to this group session. Are you sure you want to leave?';
+        e.returnValue = message;
+        return message;
+    }
+});
+</script>
+{% endblock %}

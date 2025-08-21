@@ -57,9 +57,15 @@
                     </td>
                     <td>{{ session.session_type }}</td>
                     <td>
+                        {% if session.status %}
                         <span class="status-badge status-{{ session.status.lower().replace(' ', '-') }}">
                             {{ session.status }}
                         </span>
+                        {% else %}
+                        <span class="status-badge status-not-set">
+                            Not set
+                        </span>
+                        {% endif %}
                     </td>
                     <td>
                         {% if session.has_soap_note %}
@@ -171,6 +177,12 @@
     .status-no-show {
         background: #fff3cd;
         color: #856404;
+    }
+    
+    .status-not-set {
+        background: #f8f9fa;
+        color: #6c757d;
+        border: 1px solid #dee2e6;
     }
 </style>
 

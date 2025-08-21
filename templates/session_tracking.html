@@ -125,6 +125,7 @@
         <div class="form-group">
             <label for="student-status">Session Status:</label>
             <select class="student-status form-control">
+                <option value="">Select session status...</option>
                 <option value="Completed">Completed</option>
                 <option value="Missed - No Makeup Required">Missed – No Makeup Required</option>
                 <option value="Missed - Makeup Required">Missed – Makeup Required</option>
@@ -682,10 +683,12 @@ class SessionTracker {
         this.compactView = false; // toggle for compact/expanded view
         this.activeStudentId = null; // currently active student in compact view
         this.linkedSessionId = null; // optional existing session to link trials to
+        this.allSessions = []; // all available sessions for filtering
         
         this.initializeEventListeners();
         this.setCurrentDateTime();
         this.setupKeyboardShortcuts();
+        this.loadAllSessions();
     }
     
     initializeEventListeners() {
@@ -724,6 +727,11 @@ class SessionTracker {
             }
         });
         
+        // Student selection change - filter link dropdown
+        document.getElementById('student-select').addEventListener('change', (e) => {
+            this.filterLinkSessionDropdown(e.target.value);
+        });
+        
         // Auto-calculate end time when start time changes
         document.getElementById('start-time').addEventListener('change', (e) => {
             if (e.target.value && !document.getElementById('end-time').value) {
@@ -737,6 +745,56 @@ class SessionTracker {
                 document.getElementById('end-time').value = `${endHours}:${endMinutes}`;
             }
         });
+    }
+    
+    filterLinkSessionDropdown(selectedStudentId) {
+        const linkSelect = document.getElementById('link-session-select');
+        
+        // Reset dropdown
+        linkSelect.innerHTML = '<option value="">Create new session...</option>';
+        
+        if (!selectedStudentId) {
+            return;
+        }
+        
+        // Filter sessions to show only those for the selected student and not completed
+        const filteredSessions = this.allSessions.filter(session => {
+            return session.student_id == selectedStudentId && session.status !== 'Completed';
+        });
+        
+        filteredSessions.forEach(session => {
+            const option = document.createElement('option');
+            option.value = session.id;
+            const timeStr = session.start_time && session.end_time ? 
+                ` (${session.start_time_12h} - ${session.end_time_12h})` : '';
+            option.textContent = `${session.session_date}${timeStr} - ${session.session_type}`;
+            linkSelect.appendChild(option);
+        });
+        
+        if (filteredSessions.length === 0) {
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'No available sessions for this student';
+            option.disabled = true;
+            linkSelect.appendChild(option);
+        }
+    }
+    
+    async loadAllSessions() {
+        try {
+            const response = await fetch('/api/sessions/all-for-tracking');
+            if (response.ok) {
+                this.allSessions = await response.json();
+            } else {
+                console.error('Failed to load sessions for filtering');
+                // Fallback to the sessions passed from the template
+                this.allSessions = {{ recent_sessions | tojsonfilter | safe }};
+            }
+        } catch (error) {
+            console.error('Error loading sessions:', error);
+            // Fallback to the sessions passed from the template
+            this.allSessions = {{ recent_sessions | tojsonfilter | safe }};
+        }
     }
     
     setCurrentDateTime() {
@@ -1048,8 +1106,23 @@ class SessionTracker {
             return;
         }
         
+        // Check if this goal is already selected for this student
+        const existingGoal = studentCard.querySelector(`[data-goal-id="${goalId}"]`);
+        if (existingGoal) {
+            alert('This goal is already selected for this student!');
+            goalSelect.value = '';
+            return;
+        }
+        
         const goalData = this.goals.get(goalId);
         await this.renderGoalTracking(studentCard, goalData);
+        
+        // Disable the selected option in the dropdown
+        const selectedOption = goalSelect.querySelector(`option[value="${goalId}"]`);
+        if (selectedOption) {
+            selectedOption.disabled = true;
+            selectedOption.textContent += ' (Already Selected)';
+        }
         
         // Reset select
         goalSelect.value = '';
@@ -1109,7 +1182,18 @@ class SessionTracker {
     
     removeGoal(goalId) {
         if (confirm('Are you sure you want to remove this goal? All trial data will be lost.')) {
-            document.querySelector(`[data-goal-id="${goalId}"]`).remove();
+            const goalElement = document.querySelector(`[data-goal-id="${goalId}"]`);
+            const studentCard = goalElement.closest('.student-card');
+            const goalSelect = studentCard.querySelector('.goal-select');
+            
+            // Re-enable the option in the dropdown
+            const option = goalSelect.querySelector(`option[value="${goalId}"]`);
+            if (option) {
+                option.disabled = false;
+                option.textContent = option.textContent.replace(' (Already Selected)', '');
+            }
+            
+            goalElement.remove();
         }
     }
     
@@ -1434,7 +1518,7 @@ class SessionTracker {
                     <div style="margin-left: 20px;">
             `;
             
-            // Add objective summaries
+            // Add objective summaries with editable counts
             document.querySelectorAll(`[data-student-id="${studentId}"] .objective-tracking`).forEach(objContainer => {
                 const objectiveId = parseInt(objContainer.dataset.objectiveId);
                 const trials = this.trialData.get(objectiveId);
@@ -1444,9 +1528,33 @@ class SessionTracker {
                     const accuracy = total > 0 ? Math.round(((trials.independent + trials.minimal_support + trials.moderate_support + trials.maximal_support) / total) * 100) : 0;
                     
                     summaryHTML += `
-                        <div style="margin-bottom: 10px; padding: 10px; background: #f9f9f9; border-radius: 4px;">
+                        <div style="margin-bottom: 15px; padding: 15px; background: #f9f9f9; border-radius: 4px;" data-objective-summary="${objectiveId}">
                             <strong>${objective.description}</strong><br>
-                            <small>Trials: ${total} | Accuracy: ${accuracy}% | Independent: ${trials.independent}</small>
+                            <div style="margin-top: 10px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;">
+                                <div>
+                                    <label style="font-size: 12px; color: #666;">Independent:</label>
+                                    <input type="number" min="0" value="${trials.independent}" data-type="independent" data-objective="${objectiveId}" style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px;" onchange="sessionTracker.updateSummaryTrial(${objectiveId}, 'independent', this.value)">
+                                </div>
+                                <div>
+                                    <label style="font-size: 12px; color: #666;">Min Support:</label>
+                                    <input type="number" min="0" value="${trials.minimal_support}" data-type="minimal_support" data-objective="${objectiveId}" style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px;" onchange="sessionTracker.updateSummaryTrial(${objectiveId}, 'minimal_support', this.value)">
+                                </div>
+                                <div>
+                                    <label style="font-size: 12px; color: #666;">Mod Support:</label>
+                                    <input type="number" min="0" value="${trials.moderate_support}" data-type="moderate_support" data-objective="${objectiveId}" style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px;" onchange="sessionTracker.updateSummaryTrial(${objectiveId}, 'moderate_support', this.value)">
+                                </div>
+                                <div>
+                                    <label style="font-size: 12px; color: #666;">Max Support:</label>
+                                    <input type="number" min="0" value="${trials.maximal_support}" data-type="maximal_support" data-objective="${objectiveId}" style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px;" onchange="sessionTracker.updateSummaryTrial(${objectiveId}, 'maximal_support', this.value)">
+                                </div>
+                                <div>
+                                    <label style="font-size: 12px; color: #666;">Incorrect:</label>
+                                    <input type="number" min="0" value="${trials.incorrect}" data-type="incorrect" data-objective="${objectiveId}" style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px;" onchange="sessionTracker.updateSummaryTrial(${objectiveId}, 'incorrect', this.value)">
+                                </div>
+                            </div>
+                            <div style="margin-top: 8px; font-size: 12px; color: #666;" id="summary-stats-${objectiveId}">
+                                Total: ${total} | Accuracy: ${accuracy}%
+                            </div>
                         </div>
                     `;
                 }
@@ -1458,7 +1566,7 @@ class SessionTracker {
         summaryHTML += `
             <div style="text-align: center; margin-top: 30px;">
                 <button onclick="this.parentElement.parentElement.parentElement.remove()" class="btn btn-outline" style="margin-right: 10px;">Close Review</button>
-                <button onclick="sessionTracker.finalizeAndClear(); this.parentElement.parentElement.parentElement.remove();" class="btn btn-success">Finalize & Start New Session</button>
+                <button onclick="sessionTracker.saveFinalSummary(); this.parentElement.parentElement.parentElement.remove();" class="btn btn-success">Save Changes & Finalize</button>
             </div>
         `;
         
@@ -1472,6 +1580,33 @@ class SessionTracker {
                 modal.remove();
             }
         });
+    }
+    
+    updateSummaryTrial(objectiveId, trialType, newValue) {
+        // Update the trial data with new value
+        const trials = this.trialData.get(objectiveId);
+        if (trials) {
+            trials[trialType] = parseInt(newValue) || 0;
+            
+            // Update the displayed stats
+            const total = Object.values(trials).reduce((sum, count) => sum + count, 0);
+            const correct = trials.independent + trials.minimal_support + trials.moderate_support + trials.maximal_support;
+            const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+            
+            const statsElement = document.getElementById(`summary-stats-${objectiveId}`);
+            if (statsElement) {
+                statsElement.textContent = `Total: ${total} | Accuracy: ${accuracy}%`;
+            }
+            
+            // Also update the main interface display
+            this.updateObjectiveDisplay(objectiveId);
+        }
+    }
+    
+    async saveFinalSummary() {
+        // Save any changes made in the summary
+        await this.saveSessionData();
+        this.finalizeAndClear();
     }
     
     finalizeAndClear() {

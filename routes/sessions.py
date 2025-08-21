@@ -31,7 +31,10 @@ def new_session():
             'notes': request.form.get('notes')
         }
         session = Session.create(db, session_data)
-        return redirect(url_for('dashboard.dashboard'))
+        if session_data.get('session_type') == 'Group':
+            return redirect(url_for('sessions.continue_group_session', session_id=session.id))
+        else:
+            return redirect(url_for('dashboard.dashboard'))
     students = Student.get_active(db)
     return render_template('session_form.html', students=students)
 
@@ -107,6 +110,9 @@ def soap_note(session_id):
     soap_note = SOAPNote.get_by_session(db, session_id)
     trial_logs = TrialLog.get_by_session(db, session_id)
     
+    # Check if edit mode is requested
+    edit_mode = request.args.get('edit', '').lower() == 'true'
+    
     # Get student name for session
     student = session.get_student(db)
     session.student_name = student.display_name if student else 'Unknown Student'
@@ -121,7 +127,7 @@ def soap_note(session_id):
     
     if not soap_note:
         soap_note = SOAPNote.generate_from_session(db, session)
-    return render_template('soap_note.html', session=session, soap_note=soap_note, trial_logs=trial_logs)
+    return render_template('soap_note.html', session=session, soap_note=soap_note, trial_logs=trial_logs, edit_mode=edit_mode)
 
 @sessions_bp.route('/soap/save', methods=['POST'])
 def save_soap_note():
@@ -189,7 +195,7 @@ def save_session_trials():
         'session_type': data.get('session_type', 'Individual'),
         'location': data.get('location'),
         'notes': data.get('notes', ''),
-        'status': 'Completed'
+        'status': data.get('status')
     }
     
     session = Session.create(db, session_data)
@@ -272,3 +278,84 @@ def get_session_info(session_id):
         'location': session.location or '',
         'notes': session.notes or ''
     })
+
+@sessions_bp.route('/api/sessions/all-for-tracking')
+def get_all_sessions_for_tracking():
+    """API endpoint to get all sessions with detailed info for filtering."""
+    db = get_db()
+    cursor = db.execute('''
+        SELECT s.*, st.first_name, st.last_name
+        FROM sessions s 
+        JOIN students st ON s.student_id = st.id 
+        ORDER BY s.session_date DESC, s.created_at DESC 
+        LIMIT 50
+    ''')
+    
+    sessions = []
+    for row in cursor.fetchall():
+        session = Session.from_row(row)
+        sessions.append({
+            'id': session.id,
+            'student_id': session.student_id,
+            'session_date': session.session_date,
+            'start_time': session.start_time,
+            'end_time': session.end_time,
+            'start_time_12h': session.start_time_12h,
+            'end_time_12h': session.end_time_12h,
+            'session_type': session.session_type,
+            'location': session.location or '',
+            'status': session.status,
+            'student_name': f"{row['first_name']} {row['last_name']}"
+        })
+    
+    return jsonify(sessions)
+
+@sessions_bp.route('/sessions/<int:session_id>/continue-group', methods=['GET', 'POST'])
+def continue_group_session(session_id):
+    """Continue adding students to a group session."""
+    db = get_db()
+    session = Session.get_by_id(db, session_id)
+    if not session:
+        return redirect(url_for('dashboard.dashboard'))
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        if action == 'add_student':
+            # Add another student to the group session
+            student_id = request.form['student_id']
+            session_data = {
+                'student_id': student_id,
+                'session_date': session.session_date,
+                'start_time': session.start_time,
+                'end_time': session.end_time,
+                'session_type': session.session_type,
+                'location': session.location,
+                'notes': session.notes,
+                'status': session.status
+            }
+            Session.create(db, session_data)
+            # Stay on the same page to continue adding
+            return redirect(url_for('sessions.continue_group_session', session_id=session_id))
+        elif action == 'done_adding':
+            # Finished adding students, go to dashboard
+            return redirect(url_for('dashboard.dashboard'))
+    
+    # Get students already in this group session
+    existing_students = db.execute('''
+        SELECT s.*, st.first_name, st.last_name
+        FROM sessions s 
+        JOIN students st ON s.student_id = st.id
+        WHERE s.session_date = ? AND s.start_time = ? AND s.session_type = 'Group'
+        ORDER BY st.first_name, st.last_name
+    ''', (session.session_date, session.start_time)).fetchall()
+    
+    existing_student_ids = [row['student_id'] for row in existing_students]
+    
+    # Get all students except those already in the group
+    all_students = Student.get_active(db)
+    available_students = [s for s in all_students if s.id not in existing_student_ids]
+    
+    return render_template('continue_group_session.html', 
+                         session=session, 
+                         existing_students=existing_students,
+                         available_students=available_students)

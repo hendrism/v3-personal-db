@@ -325,7 +325,7 @@ Details{% endblock %} {% block content %}
           <div style="font-size: 0.8rem; color: #6c757d; text-align: right;">
             <div>{{ trial.created_at[:10] if trial.created_at else 'Date unknown' }}</div>
             {% if trial.created_at and trial.created_at|length > 10 %}
-            <div class="time-format">{{ trial.created_at[11:16] }}</div>
+            <div class="time-format" data-time="{{ trial.created_at[11:16] }}">{{ trial.created_at[11:16] }}</div>
             {% endif %}
           </div>
         </div>

@@ -7,7 +7,7 @@ class Session(BaseModel):
     table_name = 'sessions'
 
     def __init__(self, id=None, student_id=None, session_date=None, start_time=None,
-                 end_time=None, session_type='Individual', location='', status='Completed',
+                 end_time=None, session_type='Individual', location='', status=None,
                  notes='', created_at=None):
         self.id = id
         self.student_id = student_id
