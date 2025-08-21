@@ -64,6 +64,7 @@
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
         <h2>Trial Data by Student & Objective</h2>
         <div>
+            <button onclick="togglePercentageView()" class="btn btn-outline" id="percentage-toggle">Show All Breakdown</button>
             <button onclick="toggleView()" class="btn btn-outline">Toggle Compact View</button>
         </div>
     </div>
@@ -131,7 +132,28 @@
                                 </div>
                                 
                                 <div class="trial-breakdown">
-                                    <div class="breakdown-row">
+                                    <!-- Up-to percentages (default view) -->
+                                    <div class="breakdown-row up-to-view">
+                                        <div class="breakdown-item independent">
+                                            <div class="breakdown-percent">{{ trial.percent_independent() }}%</div>
+                                            <div class="breakdown-label">Independent</div>
+                                        </div>
+                                        <div class="breakdown-item minimal">
+                                            <div class="breakdown-percent">{{ ((trial.independent or 0) + (trial.minimal_support or 0)) / trial.total_trials_new() * 100 if trial.total_trials_new() > 0 else 0 | round(1) }}%</div>
+                                            <div class="breakdown-label">Min or Better</div>
+                                        </div>
+                                        <div class="breakdown-item moderate">
+                                            <div class="breakdown-percent">{{ ((trial.independent or 0) + (trial.minimal_support or 0) + (trial.moderate_support or 0)) / trial.total_trials_new() * 100 if trial.total_trials_new() > 0 else 0 | round(1) }}%</div>
+                                            <div class="breakdown-label">Mod or Better</div>
+                                        </div>
+                                        <div class="breakdown-item maximal">
+                                            <div class="breakdown-percent">{{ trial.success_percentage }}%</div>
+                                            <div class="breakdown-label">Max or Better</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Full breakdown (hidden by default) -->
+                                    <div class="breakdown-row full-breakdown-view" style="display: none;">
                                         <div class="breakdown-item independent">
                                             <div class="breakdown-value">{{ trial.independent or 0 }}</div>
                                             <div class="breakdown-label">Independent</div>
@@ -429,11 +451,13 @@
 
 .compact-view .breakdown-row {
     justify-content: space-around;
+    flex-wrap: wrap;
 }
 
 .compact-view .breakdown-item {
     flex: 0 0 auto;
-    min-width: 60px;
+    min-width: 50px;
+    max-width: calc(25% - 5px);
 }
 </style>
 
@@ -451,6 +475,25 @@ function toggleView() {
     } else {
         container.classList.remove('compact-view');
         button.textContent = 'Toggle Compact View';
+    }
+}
+
+let showFullBreakdown = false;
+
+function togglePercentageView() {
+    showFullBreakdown = !showFullBreakdown;
+    const upToViews = document.querySelectorAll('.up-to-view');
+    const fullViews = document.querySelectorAll('.full-breakdown-view');
+    const button = document.getElementById('percentage-toggle');
+    
+    if (showFullBreakdown) {
+        upToViews.forEach(view => view.style.display = 'none');
+        fullViews.forEach(view => view.style.display = 'flex');
+        button.textContent = 'Show Up-To Percentages';
+    } else {
+        upToViews.forEach(view => view.style.display = 'flex');
+        fullViews.forEach(view => view.style.display = 'none');
+        button.textContent = 'Show All Breakdown';
     }
 }
 

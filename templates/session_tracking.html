@@ -788,12 +788,12 @@ class SessionTracker {
             } else {
                 console.error('Failed to load sessions for filtering');
                 // Fallback to the sessions passed from the template
-                this.allSessions = {{ recent_sessions | tojsonfilter | safe }};
+                this.allSessions = {{ recent_sessions | tojson | safe }};
             }
         } catch (error) {
             console.error('Error loading sessions:', error);
             // Fallback to the sessions passed from the template
-            this.allSessions = {{ recent_sessions | tojsonfilter | safe }};
+            this.allSessions = {{ recent_sessions | tojson | safe }};
         }
     }
     
