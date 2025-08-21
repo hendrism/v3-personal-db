@@ -37,6 +37,28 @@ class Session(BaseModel):
 
         return start_of_week <= session_date <= end_of_week
 
+    def format_time_12h(self, time_str):
+        """Convert 24-hour time string to 12-hour format."""
+        if not time_str:
+            return None
+        try:
+            # Parse the time string (assuming HH:MM format)
+            time_obj = datetime.strptime(time_str, '%H:%M').time()
+            # Format to 12-hour format
+            return time_obj.strftime('%I:%M %p').lstrip('0')
+        except:
+            return time_str  # Return original if parsing fails
+    
+    @property
+    def start_time_12h(self):
+        """Get start time in 12-hour format."""
+        return self.format_time_12h(self.start_time)
+    
+    @property 
+    def end_time_12h(self):
+        """Get end time in 12-hour format."""
+        return self.format_time_12h(self.end_time)
+
     def get_student(self, db):
         """Get the student for this session."""
         from .student import Student

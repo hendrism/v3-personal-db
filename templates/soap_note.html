@@ -16,6 +16,39 @@
         <strong>{{ session.student_name }}</strong> • {{ session.session_date }} • {{ session.session_type }}
     </div>
     
+    {% if soap_note and soap_note.subjective and soap_note.objective and soap_note.assessment and soap_note.plan %}
+    <!-- View Mode: Show complete SOAP note as formatted text -->
+    <div class="soap-note-view">
+        <div style="background: #f8f9fa; padding: 25px; border-radius: 8px; font-family: 'Georgia', serif; line-height: 1.8; margin-bottom: 20px;">
+            <div style="margin-bottom: 25px;">
+                <h3 style="color: #2c3e50; margin-bottom: 10px; border-bottom: 2px solid #3498db; padding-bottom: 5px;">SUBJECTIVE</h3>
+                <p style="margin: 0; font-size: 16px;">{{ soap_note.subjective }}</p>
+            </div>
+            
+            <div style="margin-bottom: 25px;">
+                <h3 style="color: #2c3e50; margin-bottom: 10px; border-bottom: 2px solid #3498db; padding-bottom: 5px;">OBJECTIVE</h3>
+                <p style="margin: 0; font-size: 16px; white-space: pre-wrap;">{{ soap_note.objective }}</p>
+            </div>
+            
+            <div style="margin-bottom: 25px;">
+                <h3 style="color: #2c3e50; margin-bottom: 10px; border-bottom: 2px solid #3498db; padding-bottom: 5px;">ASSESSMENT</h3>
+                <p style="margin: 0; font-size: 16px;">{{ soap_note.assessment }}</p>
+            </div>
+            
+            <div style="margin-bottom: 0;">
+                <h3 style="color: #2c3e50; margin-bottom: 10px; border-bottom: 2px solid #3498db; padding-bottom: 5px;">PLAN</h3>
+                <p style="margin: 0; font-size: 16px;">{{ soap_note.plan }}</p>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="?edit=true" class="btn btn-warning">Edit SOAP Note</a>
+            <button onclick="printSoapNote()" class="btn btn-outline">Print SOAP Note</button>
+        </div>
+    </div>
+    
+    {% else %}
+    <!-- Edit Mode: Show form for creating/editing -->
     <form id="soapForm">
         <input type="hidden" name="session_id" value="{{ session.id }}">
         
@@ -54,80 +87,37 @@
                         </div>
                     </div>
                     
-                    <!-- Individual Percentages Grid -->
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-bottom: 12px;">
+                    <!-- Accuracy Calculation Options (Only 4 Options) -->
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 12px;">
                         <div class="percentage-item">
-                            <input type="checkbox" id="trial_{{ loop.index0 }}_indep" class="percentage-checkbox" 
-                                   data-trial="{{ loop.index0 }}" data-type="independent" data-percentage="{{ trial.percent_independent() }}">
-                            <label for="trial_{{ loop.index0 }}_indep" style="font-size: 11px; margin-left: 5px;">
-                                <strong>{{ trial.percent_independent() }}%</strong> Independent
+                            <input type="checkbox" id="trial_{{ loop.index0 }}_indep_only" class="percentage-checkbox"
+                                   data-trial="{{ loop.index0 }}" data-type="independent_only" data-percentage="{{ trial.percent_correct_up_to('independent') }}">
+                            <label for="trial_{{ loop.index0 }}_indep_only" style="font-size: 11px; margin-left: 5px;">
+                                <strong>{{ trial.percent_correct_up_to('independent') }}%</strong> Independent
                             </label>
                         </div>
                         
                         <div class="percentage-item">
-                            <input type="checkbox" id="trial_{{ loop.index0 }}_min" class="percentage-checkbox"
-                                   data-trial="{{ loop.index0 }}" data-type="minimal_support" data-percentage="{{ trial.percent_minimal_support() }}">
-                            <label for="trial_{{ loop.index0 }}_min" style="font-size: 11px; margin-left: 5px;">
-                                <strong>{{ trial.percent_minimal_support() }}%</strong> Min Support
+                            <input type="checkbox" id="trial_{{ loop.index0 }}_min_or_better" class="percentage-checkbox"
+                                   data-trial="{{ loop.index0 }}" data-type="min_support_or_better" data-percentage="{{ trial.percent_correct_up_to('minimal_support') }}">
+                            <label for="trial_{{ loop.index0 }}_min_or_better" style="font-size: 11px; margin-left: 5px;">
+                                <strong>{{ trial.percent_correct_up_to('minimal_support') }}%</strong> Min Support or Better
                             </label>
                         </div>
                         
                         <div class="percentage-item">
-                            <input type="checkbox" id="trial_{{ loop.index0 }}_mod" class="percentage-checkbox"
-                                   data-trial="{{ loop.index0 }}" data-type="moderate_support" data-percentage="{{ trial.percent_moderate_support() }}">
-                            <label for="trial_{{ loop.index0 }}_mod" style="font-size: 11px; margin-left: 5px;">
-                                <strong>{{ trial.percent_moderate_support() }}%</strong> Mod Support
+                            <input type="checkbox" id="trial_{{ loop.index0 }}_mod_or_better" class="percentage-checkbox"
+                                   data-trial="{{ loop.index0 }}" data-type="mod_support_or_better" data-percentage="{{ trial.percent_correct_up_to('moderate_support') }}">
+                            <label for="trial_{{ loop.index0 }}_mod_or_better" style="font-size: 11px; margin-left: 5px;">
+                                <strong>{{ trial.percent_correct_up_to('moderate_support') }}%</strong> Mod Support or Better
                             </label>
                         </div>
                         
                         <div class="percentage-item">
-                            <input type="checkbox" id="trial_{{ loop.index0 }}_max" class="percentage-checkbox"
-                                   data-trial="{{ loop.index0 }}" data-type="maximal_support" data-percentage="{{ trial.percent_maximal_support() }}">
-                            <label for="trial_{{ loop.index0 }}_max" style="font-size: 11px; margin-left: 5px;">
-                                <strong>{{ trial.percent_maximal_support() }}%</strong> Max Support
-                            </label>
-                        </div>
-                        
-                        <div class="percentage-item">
-                            <input type="checkbox" id="trial_{{ loop.index0 }}_incorrect" class="percentage-checkbox"
-                                   data-trial="{{ loop.index0 }}" data-type="incorrect" data-percentage="{{ trial.percent_incorrect() }}">
-                            <label for="trial_{{ loop.index0 }}_incorrect" style="font-size: 11px; margin-left: 5px;">
-                                <strong>{{ trial.percent_incorrect() }}%</strong> Incorrect
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <!-- Combined Accuracy Levels -->
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 12px; padding-top: 8px; border-top: 1px solid #eee;">
-                        <div class="percentage-item">
-                            <input type="checkbox" id="trial_{{ loop.index0 }}_up_to_indep" class="percentage-checkbox"
-                                   data-trial="{{ loop.index0 }}" data-type="up_to_independent" data-percentage="{{ trial.percent_correct_up_to('independent') }}">
-                            <label for="trial_{{ loop.index0 }}_up_to_indep" style="font-size: 11px; margin-left: 5px;">
-                                <strong>{{ trial.percent_correct_up_to('independent') }}%</strong> Independent Only
-                            </label>
-                        </div>
-                        
-                        <div class="percentage-item">
-                            <input type="checkbox" id="trial_{{ loop.index0 }}_up_to_min" class="percentage-checkbox"
-                                   data-trial="{{ loop.index0 }}" data-type="up_to_minimal" data-percentage="{{ trial.percent_correct_up_to('minimal_support') }}">
-                            <label for="trial_{{ loop.index0 }}_up_to_min" style="font-size: 11px; margin-left: 5px;">
-                                <strong>{{ trial.percent_correct_up_to('minimal_support') }}%</strong> Up to Min Support
-                            </label>
-                        </div>
-                        
-                        <div class="percentage-item">
-                            <input type="checkbox" id="trial_{{ loop.index0 }}_up_to_mod" class="percentage-checkbox"
-                                   data-trial="{{ loop.index0 }}" data-type="up_to_moderate" data-percentage="{{ trial.percent_correct_up_to('moderate_support') }}">
-                            <label for="trial_{{ loop.index0 }}_up_to_mod" style="font-size: 11px; margin-left: 5px;">
-                                <strong>{{ trial.percent_correct_up_to('moderate_support') }}%</strong> Up to Mod Support
-                            </label>
-                        </div>
-                        
-                        <div class="percentage-item">
-                            <input type="checkbox" id="trial_{{ loop.index0 }}_up_to_max" class="percentage-checkbox"
-                                   data-trial="{{ loop.index0 }}" data-type="up_to_maximal" data-percentage="{{ trial.percent_correct_up_to('maximal_support') }}">
-                            <label for="trial_{{ loop.index0 }}_up_to_max" style="font-size: 11px; margin-left: 5px;">
-                                <strong>{{ trial.percent_correct_up_to('maximal_support') }}%</strong> Up to Max Support
+                            <input type="checkbox" id="trial_{{ loop.index0 }}_max_or_better" class="percentage-checkbox"
+                                   data-trial="{{ loop.index0 }}" data-type="max_support_or_better" data-percentage="{{ trial.percent_correct_up_to('maximal_support') }}">
+                            <label for="trial_{{ loop.index0 }}_max_or_better" style="font-size: 11px; margin-left: 5px;">
+                                <strong>{{ trial.percent_correct_up_to('maximal_support') }}%</strong> Max Support or Better
                             </label>
                         </div>
                     </div>
@@ -163,13 +153,15 @@
         </div>
         
         <div style="display: flex; gap: 1rem;">
-            <button type="submit" class="btn btn-success">Save SOAP Note</button>
-            <button type="button" onclick="previewNote()" class="btn">Preview</button>
+            <button type="button" onclick="previewBeforeSave()" class="btn btn-success">Save SOAP Note</button>
+            <button type="button" onclick="previewNote()" class="btn">Quick Preview</button>
         </div>
     </form>
+    {% endif %}
 </div>
 
-<!-- Quick Templates -->
+<!-- Quick Templates (Only show in edit mode) -->
+{% if not (soap_note and soap_note.subjective and soap_note.objective and soap_note.assessment and soap_note.plan) %}
 <div class="card">
     <h2>Quick Templates</h2>
     <div class="grid grid-3">
@@ -178,6 +170,7 @@
         <button onclick="insertTemplate('fluency')" class="btn btn-sm">Fluency Session</button>
     </div>
 </div>
+{% endif %}
 
 <style>
 .percentage-item {
@@ -237,6 +230,29 @@
     font-weight: normal;
     font-size: 13px;
 }
+
+/* Print styles for SOAP note view */
+@media print {
+    .soap-note-view {
+        font-size: 12pt;
+        line-height: 1.5;
+    }
+    
+    .soap-note-view h3 {
+        font-size: 14pt;
+        color: black !important;
+        border-bottom: 1pt solid black !important;
+    }
+    
+    .btn, .card:not(.soap-note-view .card), .trial-data-section {
+        display: none !important;
+    }
+    
+    body {
+        margin: 0;
+        padding: 20pt;
+    }
+}
 </style>
 
 <script>
@@ -247,15 +263,10 @@
             objective: "{{ trial.objective_description }}",
             total_trials: {{ trial.total_trials_new() }},
             percentages: {
-                independent: {{ trial.percent_independent() }},
-                minimal_support: {{ trial.percent_minimal_support() }},
-                moderate_support: {{ trial.percent_moderate_support() }},
-                maximal_support: {{ trial.percent_maximal_support() }},
-                incorrect: {{ trial.percent_incorrect() }},
-                up_to_independent: {{ trial.percent_correct_up_to('independent') }},
-                up_to_minimal: {{ trial.percent_correct_up_to('minimal_support') }},
-                up_to_moderate: {{ trial.percent_correct_up_to('moderate_support') }},
-                up_to_maximal: {{ trial.percent_correct_up_to('maximal_support') }}
+                independent_only: {{ trial.percent_correct_up_to('independent') }},
+                min_support_or_better: {{ trial.percent_correct_up_to('minimal_support') }},
+                mod_support_or_better: {{ trial.percent_correct_up_to('moderate_support') }},
+                max_support_or_better: {{ trial.percent_correct_up_to('maximal_support') }}
             }
         }{% if not loop.last %},{% endif %}
         {% endfor %}
@@ -280,32 +291,17 @@
             const percentage = checkbox.dataset.percentage;
             
             switch(type) {
-                case 'independent':
+                case 'independent_only':
                     percentageTexts.push(`${percentage}% independent`);
                     break;
-                case 'minimal_support':
-                    percentageTexts.push(`${percentage}% with minimal support`);
+                case 'min_support_or_better':
+                    percentageTexts.push(`${percentage}% with minimal support or better`);
                     break;
-                case 'moderate_support':
-                    percentageTexts.push(`${percentage}% with moderate support`);
+                case 'mod_support_or_better':
+                    percentageTexts.push(`${percentage}% with moderate support or better`);
                     break;
-                case 'maximal_support':
-                    percentageTexts.push(`${percentage}% with maximal support`);
-                    break;
-                case 'incorrect':
-                    percentageTexts.push(`${percentage}% incorrect`);
-                    break;
-                case 'up_to_independent':
-                    percentageTexts.push(`${percentage}% accuracy when considering independent responses only`);
-                    break;
-                case 'up_to_minimal':
-                    percentageTexts.push(`${percentage}% accuracy with minimal support or better`);
-                    break;
-                case 'up_to_moderate':
-                    percentageTexts.push(`${percentage}% accuracy with moderate support or better`);
-                    break;
-                case 'up_to_maximal':
-                    percentageTexts.push(`${percentage}% accuracy with any level of support`);
+                case 'max_support_or_better':
+                    percentageTexts.push(`${percentage}% with maximal support or better`);
                     break;
             }
         });
@@ -337,19 +333,19 @@
     const templates = {
         articulation: {
             subjective: "Student was cooperative and engaged throughout the session. No concerns reported by classroom teacher.",
-            objective: "Targeted /r/ sound in initial position of words. Student completed 20 trials with following results: Independent: X, Minimal support: X, Moderate support: X, Maximal support: X, Incorrect: X. Cuing strategies included verbal models and visual placement cues.",
+            objective: "",
             assessment: "Student demonstrated improved accuracy with /r/ sound when provided with visual and verbal cues. Progress noted compared to previous session. Student benefits from structured practice and immediate feedback.",
             plan: "Continue targeting /r/ sound in initial position. Begin introducing /r/ in medial position next session. Provide home practice materials for carryover."
         },
         language: {
             subjective: "Student participated willingly in activities. Teacher reports improved sentence structure in classroom assignments.",
-            objective: "Worked on sentence expansion using visual supports. Completed activities targeting verb tense and sentence length. Student produced X expanded sentences with Y% accuracy.",
+            objective: "",
             assessment: "Student shows consistent improvement in expressive language skills. Responds well to visual supports and structured activities. Ready to advance to more complex sentence structures.",
             plan: "Continue sentence expansion activities. Introduce complex sentences next session. Provide teacher with strategies for classroom carryover."
         },
         fluency: {
             subjective: "Student reports feeling more confident speaking in small groups. Parent notes improved fluency at home during conversations.",
-            objective: "Practiced fluency strategies including easy onset and prolonged speech. Measured fluency in conversation and reading tasks. Fluency rate: X words per minute with Y% fluent speech.",
+            objective: "",
             assessment: "Student demonstrates good understanding and application of fluency strategies. Improvement noted in structured tasks. Generalization to spontaneous speech in progress.",
             plan: "Continue fluency strategy practice. Focus on generalization to classroom and social situations. Schedule follow-up with teacher regarding classroom strategies."
         }
@@ -389,12 +385,118 @@ PLAN: ${plan}
         alert(preview);
     }
     
-    // Form submission
-    document.getElementById('soapForm').addEventListener('submit', function(e) {
-        e.preventDefault();
+    function previewBeforeSave() {
+        const subjective = document.getElementById('subjective').value;
+        const objective = document.getElementById('objective').value;
+        const assessment = document.getElementById('assessment').value;
+        const plan = document.getElementById('plan').value;
         
-        const formData = new FormData(this);
+        // Create modal for full SOAP note preview
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        `;
         
+        const modalContent = document.createElement('div');
+        modalContent.style.cssText = `
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            width: 90%;
+        `;
+        
+        modalContent.innerHTML = `
+            <h2 style="margin-top: 0;">SOAP Note Preview</h2>
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; font-family: monospace; white-space: pre-wrap; line-height: 1.6;">SUBJECTIVE: ${subjective}
+
+OBJECTIVE: ${objective}
+
+ASSESSMENT: ${assessment}
+
+PLAN: ${plan}</div>
+            
+            <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; padding: 15px; margin: 20px 0;">
+                <strong>⚠️ Last chance to edit!</strong><br>
+                You can still edit the SOAP note in this preview. Make any changes below before saving.
+            </div>
+            
+            <!-- Editable version for last-minute changes -->
+            <form id="previewEditForm">
+                <input type="hidden" name="session_id" value="${document.querySelector('[name="session_id"]').value}">
+                
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label style="display: block; font-weight: bold; margin-bottom: 5px;">Full SOAP Note (Editable):</label>
+                    <textarea id="fullSoapText" style="width: 100%; height: 300px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace;">SUBJECTIVE: ${subjective}
+
+OBJECTIVE: ${objective}
+
+ASSESSMENT: ${assessment}
+
+PLAN: ${plan}</textarea>
+                </div>
+                
+                <div style="text-align: center; margin-top: 30px;">
+                    <button type="button" onclick="this.closest('.preview-modal').remove()" class="btn btn-outline" style="margin-right: 10px;">Cancel</button>
+                    <button type="button" onclick="saveFinalSoapNote()" class="btn btn-success">Confirm & Save SOAP Note</button>
+                </div>
+            </form>
+        `;
+        
+        modal.className = 'preview-modal';
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+        
+        // Close modal when clicking outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+    }
+    
+    function saveFinalSoapNote() {
+        const fullText = document.getElementById('fullSoapText').value;
+        const sessionId = document.querySelector('[name="session_id"]').value;
+        
+        // Parse the full text back into SOAP components
+        const sections = fullText.split(/(?=SUBJECTIVE:|OBJECTIVE:|ASSESSMENT:|PLAN:)/i);
+        
+        let subjective = '', objective = '', assessment = '', plan = '';
+        
+        sections.forEach(section => {
+            const trimmed = section.trim();
+            if (trimmed.startsWith('SUBJECTIVE:')) {
+                subjective = trimmed.replace(/^SUBJECTIVE:\s*/i, '').trim();
+            } else if (trimmed.startsWith('OBJECTIVE:')) {
+                objective = trimmed.replace(/^OBJECTIVE:\s*/i, '').trim();
+            } else if (trimmed.startsWith('ASSESSMENT:')) {
+                assessment = trimmed.replace(/^ASSESSMENT:\s*/i, '').trim();
+            } else if (trimmed.startsWith('PLAN:')) {
+                plan = trimmed.replace(/^PLAN:\s*/i, '').trim();
+            }
+        });
+        
+        // Create form data
+        const formData = new FormData();
+        formData.append('session_id', sessionId);
+        formData.append('subjective', subjective);
+        formData.append('objective', objective);
+        formData.append('assessment', assessment);
+        formData.append('plan', plan);
+        
+        // Submit the form
         fetch('/soap/save', {
             method: 'POST',
             body: formData
@@ -402,7 +504,11 @@ PLAN: ${plan}
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                // Close modal
+                document.querySelector('.preview-modal').remove();
                 alert('SOAP note saved successfully!');
+                // Optionally reload or redirect
+                location.reload();
             } else {
                 alert('Error saving SOAP note');
             }
@@ -410,6 +516,20 @@ PLAN: ${plan}
         .catch(error => {
             alert('Error saving SOAP note: ' + error);
         });
-    });
+    }
+    
+    function printSoapNote() {
+        window.print();
+    }
+    
+    // Only attach form listeners if we're in edit mode
+    if (document.getElementById('soapForm')) {
+        // Prevent default form submission - we use preview-before-save now
+        document.getElementById('soapForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            // Redirect to preview instead
+            previewBeforeSave();
+        });
+    }
 </script>
 {% endblock %}

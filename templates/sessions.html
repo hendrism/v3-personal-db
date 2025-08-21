@@ -48,9 +48,9 @@
                     <td>{{ session.session_date }}</td>
                     <td>
                         {% if session.start_time and session.end_time %}
-                            <span class="time-format">{{ session.start_time }}</span> - <span class="time-format">{{ session.end_time }}</span>
+                            <span class="time-format">{{ session.start_time_12h }}</span> - <span class="time-format">{{ session.end_time_12h }}</span>
                         {% elif session.start_time %}
-                            <span class="time-format">{{ session.start_time }}</span>
+                            <span class="time-format">{{ session.start_time_12h }}</span>
                         {% else %}
                             -
                         {% endif %}

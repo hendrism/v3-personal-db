@@ -63,14 +63,12 @@
     <div class="card" id="session-controls" style="display: none;">
         <h2>Session Information</h2>
         
-        <!-- Quick Templates -->
-        <div class="form-group">
-            <label>Quick Session Templates:</label>
+        <!-- Quick Templates for unlinked sessions -->
+        <div class="form-group" id="unlinked-templates">
+            <label>Quick Defaults (for new sessions):</label>
             <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 5px;">
-                <button class="btn btn-sm btn-outline" onclick="sessionTracker.applyTemplate('individual30')">Individual 30min</button>
-                <button class="btn btn-sm btn-outline" onclick="sessionTracker.applyTemplate('individual60')">Individual 60min</button>
-                <button class="btn btn-sm btn-outline" onclick="sessionTracker.applyTemplate('group30')">Group 30min</button>
-                <button class="btn btn-sm btn-outline" onclick="sessionTracker.applyTemplate('pushin')">Push-in</button>
+                <button class="btn btn-sm btn-outline" onclick="sessionTracker.applyTemplate('individual30')">30 min Individual</button>
+                <button class="btn btn-sm btn-outline" onclick="sessionTracker.applyTemplate('group30')">30 min Group</button>
             </div>
         </div>
         
@@ -84,10 +82,6 @@
                 <select id="session-type" class="form-control">
                     <option value="Individual">Individual</option>
                     <option value="Group">Group</option>
-                    <option value="Push-in">Push-in</option>
-                    <option value="Pull-out">Pull-out</option>
-                    <option value="Consultation">Consultation</option>
-                    <option value="Assessment">Assessment</option>
                 </select>
             </div>
         </div>
@@ -112,6 +106,7 @@
         
         <div style="display: flex; gap: 1rem; margin-top: 20px; flex-wrap: wrap;">
             <button id="save-session-btn" class="btn btn-success">💾 Save Session Data</button>
+            <button id="end-session-btn" class="btn btn-primary">🏁 End Session & Review</button>
             <button id="clear-session-btn" class="btn btn-outline">🗑️ Clear All Data</button>
             <button id="export-data-btn" class="btn btn-outline">📊 Export Data</button>
         </div>
@@ -126,6 +121,35 @@
             <button class="btn btn-outline remove-student-btn">Remove Student</button>
         </div>
         
+        <!-- Session Status -->
+        <div class="form-group">
+            <label for="student-status">Session Status:</label>
+            <select class="student-status form-control">
+                <option value="Completed">Completed</option>
+                <option value="Missed - No Makeup Required">Missed – No Makeup Required</option>
+                <option value="Missed - Makeup Required">Missed – Makeup Required</option>
+                <option value="Completed Makeup Session">Completed Makeup Session</option>
+            </select>
+        </div>
+        
+        <!-- Linked Missed Session (for makeup sessions) -->
+        <div class="form-group linked-session-group" style="display: none;">
+            <label for="linked-missed-session">Link to Missed Session:</label>
+            <select class="linked-missed-session form-control">
+                <option value="">Select missed session...</option>
+            </select>
+        </div>
+        
+        <!-- Student Progress Summary -->
+        <div class="student-progress-summary" style="margin-bottom: 20px; padding: 15px; background: #e8f4f8; border-radius: 8px; display: none;">
+            <h4 style="margin: 0 0 10px 0; color: #2c3e50;">Session Progress</h4>
+            <div class="progress-stats">
+                <span class="stat-item">Goals: <strong class="goal-count">0</strong></span>
+                <span class="stat-item">Objectives: <strong class="objective-count">0</strong></span>
+                <span class="stat-item">Total Trials: <strong class="total-trial-count">0</strong></span>
+            </div>
+        </div>
+
         <!-- Goal Selection -->
         <div class="form-group">
             <label>Select Goal:</label>
@@ -415,9 +439,12 @@
     border: 2px solid #28a745;
 }
 
-/* Tabbed interface styles */
+/* Enhanced tabbed interface styles */
 .student-tabs {
     margin-bottom: 20px;
+    position: sticky;
+    top: 10px;
+    z-index: 100;
 }
 
 .tabs-header {
@@ -428,12 +455,14 @@
     padding: 15px;
     background: #f8f9fa;
     border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .tabs-container {
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
+    align-items: center;
 }
 
 .student-tab {
@@ -445,6 +474,7 @@
     font-weight: 500;
     transition: all 0.3s;
     white-space: nowrap;
+    position: relative;
 }
 
 .student-tab.active {
@@ -456,11 +486,31 @@
 .student-tab:hover {
     background: #e9ecef;
     border-color: #adb5bd;
+    transform: translateY(-2px);
 }
 
 .student-tab.active:hover {
     background: #0056b3;
     border-color: #0056b3;
+}
+
+.student-tab .trial-count {
+    display: inline-block;
+    background: #28a745;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    line-height: 20px;
+    text-align: center;
+    margin-left: 8px;
+    font-weight: bold;
+}
+
+.student-tab.active .trial-count {
+    background: #fff;
+    color: #007bff;
 }
 
 .students-container.compact-view .student-card {
@@ -566,6 +616,60 @@
 .shortcuts-hint.hidden {
     display: none;
 }
+
+/* Student progress summary */
+.progress-stats {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    font-size: 14px;
+    color: #34495e;
+}
+
+.stat-item strong {
+    color: #2c3e50;
+    font-size: 16px;
+}
+
+/* Improved objective navigation */
+.objective-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 6px;
+}
+
+.objective-nav-buttons {
+    display: flex;
+    gap: 5px;
+}
+
+.objective-nav-btn {
+    padding: 5px 10px;
+    font-size: 12px;
+    border: 1px solid #ddd;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.objective-nav-btn:hover {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.objective-nav-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
 </style>
 
 <script>
@@ -595,6 +699,11 @@ class SessionTracker {
             this.saveSessionData();
         });
         
+        // End session and review
+        document.getElementById('end-session-btn').addEventListener('click', () => {
+            this.endSessionAndReview();
+        });
+        
         // Clear all data
         document.getElementById('clear-session-btn').addEventListener('click', () => {
             this.clearAllData();
@@ -608,6 +717,11 @@ class SessionTracker {
         // Link session selection
         document.getElementById('link-session-select').addEventListener('change', (e) => {
             this.linkedSessionId = e.target.value ? parseInt(e.target.value) : null;
+            if (this.linkedSessionId) {
+                this.prefillSessionInfo(this.linkedSessionId);
+            } else {
+                this.clearSessionInfo();
+            }
         });
         
         // Auto-calculate end time when start time changes
@@ -631,6 +745,44 @@ class SessionTracker {
         document.getElementById('start-time').value = now.toTimeString().split(' ')[0].substring(0, 5);
     }
     
+    async prefillSessionInfo(sessionId) {
+        try {
+            // Fetch full session details from API
+            const response = await fetch(`/api/sessions/${sessionId}/info`);
+            if (!response.ok) {
+                console.error('Failed to fetch session info');
+                return;
+            }
+            
+            const sessionInfo = await response.json();
+            
+            // Prefill all the session fields
+            document.getElementById('session-date').value = sessionInfo.session_date || '';
+            document.getElementById('start-time').value = sessionInfo.start_time || '';
+            document.getElementById('end-time').value = sessionInfo.end_time || '';
+            document.getElementById('session-type').value = sessionInfo.session_type || 'Individual';
+            document.getElementById('location').value = sessionInfo.location || '';
+            document.getElementById('session-notes').value = sessionInfo.notes || '';
+            
+            // Hide quick templates when linking to existing session
+            document.getElementById('unlinked-templates').style.display = 'none';
+            
+        } catch (error) {
+            console.error('Error prefilling session info:', error);
+        }
+    }
+    
+    clearSessionInfo() {
+        // Reset to default values when no session is linked
+        this.setCurrentDateTime();
+        
+        // Apply 30 min Individual as default for unlinked quick entry
+        this.applyTemplate('individual30');
+        
+        // Show quick templates for unlinked sessions
+        document.getElementById('unlinked-templates').style.display = 'block';
+    }
+    
     async addStudentToSession() {
         const studentSelect = document.getElementById('student-select');
         const studentId = parseInt(studentSelect.value);
@@ -651,6 +803,10 @@ class SessionTracker {
         // Show session controls if this is the first student
         if (this.students.size === 1) {
             document.getElementById('session-controls').style.display = 'block';
+            // Apply default settings for unlinked sessions
+            if (!this.linkedSessionId) {
+                this.clearSessionInfo();
+            }
         }
         
         // Update tabs
@@ -679,8 +835,17 @@ class SessionTracker {
         for (const [studentId, studentData] of this.students) {
             const tab = document.createElement('div');
             tab.className = `student-tab ${studentId === this.activeStudentId ? 'active' : ''}`;
-            tab.textContent = studentData.name;
-            tab.onclick = (event) => this.switchToStudent(studentId, event.target);
+            
+            // Calculate total trials for this student
+            const totalTrials = this.getStudentTotalTrials(studentId);
+            
+            // Create tab content with trial count
+            tab.innerHTML = `
+                ${studentData.name}
+                ${totalTrials > 0 ? `<span class="trial-count">${totalTrials}</span>` : ''}
+            `;
+            
+            tab.onclick = (event) => this.switchToStudent(studentId, event.currentTarget);
             tabsContainer.appendChild(tab);
         }
         
@@ -689,6 +854,18 @@ class SessionTracker {
             const firstStudentId = this.students.keys().next().value;
             this.switchToStudent(firstStudentId);
         }
+    }
+    
+    getStudentTotalTrials(studentId) {
+        let total = 0;
+        document.querySelectorAll(`[data-student-id="${studentId}"] .objective-tracking`).forEach(objContainer => {
+            const objectiveId = parseInt(objContainer.dataset.objectiveId);
+            const trials = this.trialData.get(objectiveId);
+            if (trials) {
+                total += Object.values(trials).reduce((sum, count) => sum + count, 0);
+            }
+        });
+        return total;
     }
     
     switchToStudent(studentId, clickedTab = null) {
@@ -811,6 +988,29 @@ class SessionTracker {
         container.querySelector('.add-goal-btn').addEventListener('click', () => {
             this.addGoalToStudent(studentId);
         });
+        
+        // Status selector change
+        container.querySelector('.student-status').addEventListener('change', (e) => {
+            const linkedSessionGroup = container.querySelector('.linked-session-group');
+            if (e.target.value === 'Completed Makeup Session') {
+                linkedSessionGroup.style.display = 'block';
+                this.loadMissedSessions(studentId, container);
+            } else {
+                linkedSessionGroup.style.display = 'none';
+            }
+        });
+    }
+    
+    async loadMissedSessions(studentId, container) {
+        try {
+            // This would need a backend endpoint to fetch missed sessions for this student
+            // For now, we'll use a placeholder
+            const select = container.querySelector('.linked-missed-session');
+            select.innerHTML = '<option value="">Select missed session...</option>';
+            // TODO: Implement API endpoint to get missed sessions for student
+        } catch (error) {
+            console.error('Error loading missed sessions:', error);
+        }
     }
     
     removeStudent(studentId) {
@@ -1007,6 +1207,39 @@ class SessionTracker {
         if (independentCount) independentCount.textContent = trials.independent;
         if (supportCountEl) supportCountEl.textContent = supportCount;
         if (incorrectCount) incorrectCount.textContent = trials.incorrect;
+        
+        // Update student progress summary
+        this.updateStudentProgressSummary(container);
+        
+        // Update student tabs with trial counts
+        this.updateStudentTabs();
+    }
+    
+    updateStudentProgressSummary(objectiveContainer) {
+        const studentCard = objectiveContainer.closest('.student-card');
+        const progressSummary = studentCard.querySelector('.student-progress-summary');
+        
+        // Show progress summary
+        progressSummary.style.display = 'block';
+        
+        // Count goals and objectives
+        const goalCount = studentCard.querySelectorAll('.goal-tracking').length;
+        const objectiveCount = studentCard.querySelectorAll('.objective-tracking').length;
+        
+        // Calculate total trials for this student
+        let totalTrials = 0;
+        studentCard.querySelectorAll('.objective-tracking').forEach(objContainer => {
+            const objectiveId = parseInt(objContainer.dataset.objectiveId);
+            const trials = this.trialData.get(objectiveId);
+            if (trials) {
+                totalTrials += Object.values(trials).reduce((sum, count) => sum + count, 0);
+            }
+        });
+        
+        // Update summary display
+        progressSummary.querySelector('.goal-count').textContent = goalCount;
+        progressSummary.querySelector('.objective-count').textContent = objectiveCount;
+        progressSummary.querySelector('.total-trial-count').textContent = totalTrials;
     }
     
     removeObjective(objectiveId) {
@@ -1049,6 +1282,11 @@ class SessionTracker {
         for (const [studentId, studentData] of this.students) {
             const trials = [];
             
+            // Get student status and linked session
+            const studentCard = document.querySelector(`[data-student-id="${studentId}"]`);
+            const status = studentCard.querySelector('.student-status').value;
+            const linkedMissedSession = studentCard.querySelector('.linked-missed-session').value;
+            
             // Collect all trial data for this student
             document.querySelectorAll(`[data-student-id="${studentId}"] .objective-tracking`).forEach(objContainer => {
                 const objectiveId = parseInt(objContainer.dataset.objectiveId);
@@ -1082,6 +1320,8 @@ class SessionTracker {
                     payload = {
                         student_id: studentId,
                         ...sessionData,
+                        status: status,
+                        linked_missed_session: linkedMissedSession || null,
                         trials: trials
                     };
                     endpoint = '/api/sessions/save-trials';
@@ -1113,7 +1353,7 @@ class SessionTracker {
         } else {
             alert('New session(s) created successfully!');
         }
-        this.clearAllData();
+        // Don't clear data automatically - let user decide when to end session
     }
     
     findGoalForObjective(objectiveId) {
@@ -1121,6 +1361,123 @@ class SessionTracker {
         const objElement = document.querySelector(`[data-objective-id="${objectiveId}"]`);
         const goalElement = objElement.closest('.goal-tracking');
         return parseInt(goalElement.dataset.goalId);
+    }
+    
+    async endSessionAndReview() {
+        if (this.students.size === 0) {
+            alert('Please add at least one student to the session!');
+            return;
+        }
+        
+        if (this.trialData.size === 0) {
+            alert('Please record some trial data before ending the session!');
+            return;
+        }
+        
+        // Save the session first
+        await this.saveSessionData();
+        
+        // Create and show session summary modal
+        this.showSessionSummary();
+    }
+    
+    showSessionSummary() {
+        // Create modal for session summary
+        const modal = document.createElement('div');
+        modal.className = 'session-summary-modal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        `;
+        
+        const modalContent = document.createElement('div');
+        modalContent.style.cssText = `
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            width: 90%;
+        `;
+        
+        let summaryHTML = `
+            <h2 style="margin-top: 0;">Session Summary</h2>
+            <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                <strong>Session Info:</strong><br>
+                Date: ${document.getElementById('session-date').value}<br>
+                Type: ${document.getElementById('session-type').value}<br>
+                Time: ${document.getElementById('start-time').value} - ${document.getElementById('end-time').value}
+            </div>
+        `;
+        
+        // Add student summaries
+        for (const [studentId, studentData] of this.students) {
+            const studentCard = document.querySelector(`[data-student-id="${studentId}"]`);
+            const totalTrials = this.getStudentTotalTrials(studentId);
+            const status = studentCard.querySelector('.student-status').value;
+            
+            summaryHTML += `
+                <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px;">
+                    <h3 style="margin-top: 0; color: #007bff;">${studentData.name}</h3>
+                    <p><strong>Status:</strong> ${status}</p>
+                    <p><strong>Total Trials:</strong> ${totalTrials}</p>
+                    
+                    <div style="margin-left: 20px;">
+            `;
+            
+            // Add objective summaries
+            document.querySelectorAll(`[data-student-id="${studentId}"] .objective-tracking`).forEach(objContainer => {
+                const objectiveId = parseInt(objContainer.dataset.objectiveId);
+                const trials = this.trialData.get(objectiveId);
+                if (trials && Object.values(trials).some(count => count > 0)) {
+                    const objective = this.objectives.get(objectiveId);
+                    const total = Object.values(trials).reduce((sum, count) => sum + count, 0);
+                    const accuracy = total > 0 ? Math.round(((trials.independent + trials.minimal_support + trials.moderate_support + trials.maximal_support) / total) * 100) : 0;
+                    
+                    summaryHTML += `
+                        <div style="margin-bottom: 10px; padding: 10px; background: #f9f9f9; border-radius: 4px;">
+                            <strong>${objective.description}</strong><br>
+                            <small>Trials: ${total} | Accuracy: ${accuracy}% | Independent: ${trials.independent}</small>
+                        </div>
+                    `;
+                }
+            });
+            
+            summaryHTML += `</div></div>`;
+        }
+        
+        summaryHTML += `
+            <div style="text-align: center; margin-top: 30px;">
+                <button onclick="this.parentElement.parentElement.parentElement.remove()" class="btn btn-outline" style="margin-right: 10px;">Close Review</button>
+                <button onclick="sessionTracker.finalizeAndClear(); this.parentElement.parentElement.parentElement.remove();" class="btn btn-success">Finalize & Start New Session</button>
+            </div>
+        `;
+        
+        modalContent.innerHTML = summaryHTML;
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+        
+        // Close modal when clicking outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+    }
+    
+    finalizeAndClear() {
+        // Clear all data for new session
+        this.clearAllData();
+        alert('Session finalized! Ready to start a new session.');
     }
     
     clearAllData() {
@@ -1157,22 +1514,10 @@ class SessionTracker {
                 this.setEndTime(30);
                 break;
                 
-            case 'individual60':
-                document.getElementById('session-type').value = 'Individual';
-                document.getElementById('start-time').value = currentTime;
-                this.setEndTime(60);
-                break;
-                
             case 'group30':
                 document.getElementById('session-type').value = 'Group';
                 document.getElementById('start-time').value = currentTime;
                 this.setEndTime(30);
-                break;
-                
-            case 'pushin':
-                document.getElementById('session-type').value = 'Push-in';
-                document.getElementById('start-time').value = currentTime;
-                this.setEndTime(45);
                 break;
         }
     }

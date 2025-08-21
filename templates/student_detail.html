@@ -268,7 +268,7 @@ Details{% endblock %} {% block content %}
           </span>
           {% endif %} {% if session.start_time and session.end_time %}
           <span class="text-muted"
-            >• {{ session.start_time }} - {{ session.end_time }}</span
+            >• {{ session.start_time_12h }} - {{ session.end_time_12h }}</span
           >
           {% endif %}
         </div>

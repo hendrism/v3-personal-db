@@ -31,7 +31,7 @@ def new_session():
             'notes': request.form.get('notes')
         }
         session = Session.create(db, session_data)
-        return redirect(url_for('sessions.session_detail', session_id=session.id))
+        return redirect(url_for('dashboard.dashboard'))
     students = Student.get_active(db)
     return render_template('session_form.html', students=students)
 
@@ -253,4 +253,22 @@ def update_session_trials():
         'success': True,
         'session_id': session_id,
         'trials_saved': len(saved_trials)
+    })
+
+@sessions_bp.route('/api/sessions/<int:session_id>/info')
+def get_session_info(session_id):
+    """API endpoint to get session information for prefilling."""
+    db = get_db()
+    session = Session.get_by_id(db, session_id)
+    if not session:
+        return jsonify({'error': 'Session not found'}), 404
+    
+    return jsonify({
+        'id': session.id,
+        'session_date': session.session_date,
+        'start_time': session.start_time,
+        'end_time': session.end_time,
+        'session_type': session.session_type,
+        'location': session.location or '',
+        'notes': session.notes or ''
     })

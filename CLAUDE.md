@@ -88,3 +88,28 @@ The application tracks detailed trial data with support levels:
 - Incorrect
 
 Progress calculations are built into the Objective model to track accuracy percentages.
+
+## Implementation Log Protocol
+
+**CRITICAL WORKFLOW INSTRUCTIONS:**
+
+### For Significant Changes/Implementations:
+- ALWAYS create or update an IMPLEMENTATION_LOG.md file documenting:
+  - Original requirements/requests  
+  - Complete implementation details
+  - Files modified and changes made
+  - Technical enhancements added
+  - Testing recommendations
+  - Date and scope of work
+
+### At START of Each New Session:
+1. **IMMEDIATELY check for and read the most recent IMPLEMENTATION_LOG.md**
+2. Review recent changes and current project state
+3. Reference this context when working on new tasks
+4. Ask user if they want to discuss recent changes or if new work should build upon them
+
+### Implementation Log Location:
+- Always save as `IMPLEMENTATION_LOG.md` in project root
+- If multiple logs needed, use date-based naming: `IMPLEMENTATION_LOG_2025-08-21.md`
+
+This ensures project continuity and context preservation across all sessions.

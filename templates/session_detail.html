@@ -7,11 +7,14 @@
 <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
-            <h2 class="mb-0">{{ student.display_name }} - {{ session.session_date }}</h2>
+            <h2 class="mb-0">Session Details - {{ session.session_date }}</h2>
             <p class="text-muted">
-                {{ session.session_type }}
+                {{ session.session_type }} Session
                 {% if session.start_time and session.end_time %}
-                    • {{ session.start_time }} - {{ session.end_time }}
+                    • {{ session.start_time_12h }} - {{ session.end_time_12h }}
+                {% endif %}
+                {% if session.location %}
+                    • {{ session.location }}
                 {% endif %}
             </p>
         </div>
@@ -21,7 +24,7 @@
             {% else %}
                 <a href="/soap/{{ session.id }}" class="btn">View SOAP Note</a>
             {% endif %}
-            <a href="/students/{{ student.id }}" class="btn">Back to Student</a>
+            <a href="/sessions" class="btn">Back to Sessions</a>
         </div>
     </div>
     
@@ -32,133 +35,453 @@
     {% endif %}
 </div>
 
-<div class="grid grid-2">
-    <!-- Trial Data Entry -->
-    <div class="card">
-        <h2>Trial Data Entry</h2>
-        
-        <form id="trialForm">
-            <input type="hidden" name="session_id" value="{{ session.id }}">
-            
-            {% if goals %}
-            <div class="form-group">
-                <label for="goal_id">Goal (Optional)</label>
-                <select id="goal_id" name="goal_id">
-                    <option value="">Select a goal</option>
-                    {% for goal in goals %}
-                    <option value="{{ goal.id }}">{{ goal.description }}</option>
-                    {% endfor %}
-                </select>
+<!-- Session Overview -->
+<div class="card">
+    <h2>Session Overview</h2>
+    <div class="session-overview">
+        <div class="overview-stats">
+            <div class="stat-box">
+                <div class="stat-number">{{ student.display_name if student else 'Multiple Students' }}</div>
+                <div class="stat-label">Primary Student</div>
             </div>
-            {% endif %}
-            
-            <div class="grid grid-2">
-                <div class="form-group">
-                    <label for="independent">Independent</label>
-                    <input type="number" id="independent" name="independent" min="0" value="0">
-                </div>
-                
-                <div class="form-group">
-                    <label for="minimal_support">Minimal Support</label>
-                    <input type="number" id="minimal_support" name="minimal_support" min="0" value="0">
-                </div>
+            <div class="stat-box">
+                <div class="stat-number">{{ trial_logs|length }}</div>
+                <div class="stat-label">Trial Sets</div>
             </div>
-            
-            <div class="grid grid-2">
-                <div class="form-group">
-                    <label for="moderate_support">Moderate Support</label>
-                    <input type="number" id="moderate_support" name="moderate_support" min="0" value="0">
+            <div class="stat-box">
+                <div class="stat-number">
+                    {% set total_trials = trial_logs | sum(attribute='total_trials') %}
+                    {{ total_trials }}
                 </div>
-                
-                <div class="form-group">
-                    <label for="maximal_support">Maximal Support</label>
-                    <input type="number" id="maximal_support" name="maximal_support" min="0" value="0">
-                </div>
+                <div class="stat-label">Total Trials</div>
             </div>
-            
-            <div class="form-group">
-                <label for="incorrect">Incorrect</label>
-                <input type="number" id="incorrect" name="incorrect" min="0" value="0">
-            </div>
-            
-            <div class="form-group">
-                <label for="notes">Trial Notes</label>
-                <textarea id="notes" name="notes" rows="2" placeholder="Notes about this trial set..."></textarea>
-            </div>
-            
-            <button type="submit" class="btn btn-success">Add Trial Data</button>
-            
-            <!-- Live calculations -->
-            <div id="calculations" class="mt-1" style="padding: 1rem; background: #f8f9fa; border-radius: 4px; display: none;">
-                <strong>Quick Stats:</strong>
-                <div style="margin-top: 0.5rem;">
-                    <span id="totalTrials">Total Trials: 0</span> • 
-                    <span id="independence">Independence: 0%</span> • 
-                    <span id="successRate">Success Rate: 0%</span>
-                </div>
-            </div>
-        </form>
-    </div>
-
-    <!-- Previous Trial Data -->
-    <div class="card">
-        <h2>Session Trial Data</h2>
-        
-        <div id="trialsList">
-            {% if trial_logs %}
-                {% for trial in trial_logs %}
-                <div style="padding: 1rem; background: #f8f9fa; border-radius: 4px; margin-bottom: 1rem;">
-                    <div style="display: flex; justify-content: between; align-items: center;">
-                        <strong>{{ trial.total_trials }} trials</strong>
-                        <span class="text-muted">{{ trial.independence_percentage }}% independence</span>
-                    </div>
-                    <div style="margin-top: 0.5rem; font-size: 0.9rem;">
-                        Independent: {{ trial.independent }} • 
-                        Minimal: {{ trial.minimal_support }} • 
-                        Moderate: {{ trial.moderate_support }} • 
-                        Maximal: {{ trial.maximal_support }} • 
-                        Incorrect: {{ trial.incorrect }}
-                    </div>
-                    {% if trial.notes %}
-                        <p style="margin: 0.5rem 0 0 0; font-style: italic;">{{ trial.notes }}</p>
-                    {% endif %}
-                </div>
-                {% endfor %}
-            {% else %}
-                <p class="text-muted">No trial data recorded yet for this session.</p>
-            {% endif %}
         </div>
     </div>
 </div>
 
-<script>
-    // Live calculation updates
-    function updateCalculations() {
-        const independent = parseInt(document.getElementById('independent').value) || 0;
-        const minimal = parseInt(document.getElementById('minimal_support').value) || 0;
-        const moderate = parseInt(document.getElementById('moderate_support').value) || 0;
-        const maximal = parseInt(document.getElementById('maximal_support').value) || 0;
-        const incorrect = parseInt(document.getElementById('incorrect').value) || 0;
-        
-        const total = independent + minimal + moderate + maximal + incorrect;
-        const successful = independent + minimal + moderate + maximal;
-        
-        if (total > 0) {
-            const independencePercent = Math.round((independent / total) * 100);
-            const successPercent = Math.round((successful / total) * 100);
-            
-            document.getElementById('totalTrials').textContent = `Total Trials: ${total}`;
-            document.getElementById('independence').textContent = `Independence: ${independencePercent}%`;
-            document.getElementById('successRate').textContent = `Success Rate: ${successPercent}%`;
-            document.getElementById('calculations').style.display = 'block';
-        } else {
-            document.getElementById('calculations').style.display = 'none';
-        }
-    }
+<!-- Student Data Organized by Student and Objective -->
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2>Trial Data by Student & Objective</h2>
+        <div>
+            <button onclick="toggleView()" class="btn btn-outline">Toggle Compact View</button>
+        </div>
+    </div>
     
-    // Attach event listeners
+    {% if trial_logs %}
+        <!-- Group trials by student if multiple students -->
+        {% set trials_by_student = {} %}
+        {% for trial in trial_logs %}
+            {% set student_key = trial.session_id|string + "_" + (trial.student_id|string if trial.student_id else "unknown") %}
+            {% if student_key not in trials_by_student %}
+                {% set _ = trials_by_student.update({student_key: []}) %}
+            {% endif %}
+            {% set _ = trials_by_student[student_key].append(trial) %}
+        {% endfor %}
+        
+        <div id="student-data-container">
+            {% for student_key, student_trials in trials_by_student.items() %}
+            <div class="student-section">
+                <div class="student-header">
+                    <h3>{{ student.display_name if student else 'Student' }}</h3>
+                    <div class="student-summary">
+                        {% set student_total_trials = student_trials | sum(attribute='total_trials') %}
+                        {% set student_accuracy = (student_trials | map('percent_correct_up_to', 'maximal_support') | sum / student_trials|length) | round(1) if student_trials|length > 0 else 0 %}
+                        <span>{{ student_trials|length }} objectives • {{ student_total_trials }} trials • {{ student_accuracy }}% avg accuracy</span>
+                    </div>
+                </div>
+                
+                <!-- Group by objectives -->
+                {% set trials_by_objective = {} %}
+                {% for trial in student_trials %}
+                    {% set obj_key = trial.objective_id|string if trial.objective_id else 'general' %}
+                    {% if obj_key not in trials_by_objective %}
+                        {% set _ = trials_by_objective.update({obj_key: []}) %}
+                    {% endif %}
+                    {% set _ = trials_by_objective[obj_key].append(trial) %}
+                {% endfor %}
+                
+                <div class="objectives-container">
+                    {% for obj_key, obj_trials in trials_by_objective.items() %}
+                    <div class="objective-section">
+                        <div class="objective-header">
+                            <h4>
+                                {% if obj_key == 'general' %}
+                                    General Trial Data
+                                {% else %}
+                                    {{ obj_trials[0].objective_description or 'Objective ' + obj_key }}
+                                {% endif %}
+                            </h4>
+                            <div class="objective-meta">
+                                {{ obj_trials|length }} trial set{{ 's' if obj_trials|length != 1 else '' }}
+                            </div>
+                        </div>
+                        
+                        <div class="trials-grid">
+                            {% for trial in obj_trials %}
+                            <div class="trial-card">
+                                <div class="trial-header">
+                                    <div class="trial-summary">
+                                        <strong>{{ trial.total_trials_new() }} trials</strong>
+                                        <span class="accuracy-badge">{{ trial.percent_correct_up_to('maximal_support') }}% accuracy</span>
+                                    </div>
+                                    {% if trial.notes %}
+                                    <div class="trial-notes">{{ trial.notes }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="trial-breakdown">
+                                    <div class="breakdown-row">
+                                        <div class="breakdown-item independent">
+                                            <div class="breakdown-value">{{ trial.independent or 0 }}</div>
+                                            <div class="breakdown-label">Independent</div>
+                                            <div class="breakdown-percent">{{ trial.percent_independent() }}%</div>
+                                        </div>
+                                        <div class="breakdown-item minimal">
+                                            <div class="breakdown-value">{{ trial.minimal_support or 0 }}</div>
+                                            <div class="breakdown-label">Min Support</div>
+                                            <div class="breakdown-percent">{{ trial.percent_minimal_support() }}%</div>
+                                        </div>
+                                        <div class="breakdown-item moderate">
+                                            <div class="breakdown-value">{{ trial.moderate_support or 0 }}</div>
+                                            <div class="breakdown-label">Mod Support</div>
+                                            <div class="breakdown-percent">{{ trial.percent_moderate_support() }}%</div>
+                                        </div>
+                                        <div class="breakdown-item maximal">
+                                            <div class="breakdown-value">{{ trial.maximal_support or 0 }}</div>
+                                            <div class="breakdown-label">Max Support</div>
+                                            <div class="breakdown-percent">{{ trial.percent_maximal_support() }}%</div>
+                                        </div>
+                                        <div class="breakdown-item incorrect">
+                                            <div class="breakdown-value">{{ trial.incorrect or 0 }}</div>
+                                            <div class="breakdown-label">Incorrect</div>
+                                            <div class="breakdown-percent">{{ trial.percent_incorrect() }}%</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+    {% else %}
+        <div class="empty-state">
+            <p class="text-muted">No trial data recorded for this session yet.</p>
+            {% if student %}
+            <a href="/students/{{ student.id }}" class="btn btn-primary">Go to Student Profile to Add Data</a>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+
+<!-- Quick Add Trial Data -->
+{% if student %}
+<div class="card">
+    <h2>Add Trial Data</h2>
+    
+    <form id="trialForm">
+        <input type="hidden" name="session_id" value="{{ session.id }}">
+        
+        {% if goals %}
+        <div class="form-group">
+            <label for="objective_select">Select Objective:</label>
+            <select id="objective_select" name="objective_id">
+                <option value="">Choose an objective...</option>
+                {% for goal in goals_with_objectives %}
+                    <optgroup label="{{ goal.goal.description }}">
+                        {% for objective in goal.objectives %}
+                            <option value="{{ objective.id }}">{{ objective.description }}</option>
+                        {% endfor %}
+                    </optgroup>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+        
+        <div class="trial-input-grid">
+            <div class="form-group">
+                <label for="independent">Independent</label>
+                <input type="number" id="independent" name="independent" min="0" value="0">
+            </div>
+            <div class="form-group">
+                <label for="minimal_support">Minimal Support</label>
+                <input type="number" id="minimal_support" name="minimal_support" min="0" value="0">
+            </div>
+            <div class="form-group">
+                <label for="moderate_support">Moderate Support</label>
+                <input type="number" id="moderate_support" name="moderate_support" min="0" value="0">
+            </div>
+            <div class="form-group">
+                <label for="maximal_support">Maximal Support</label>
+                <input type="number" id="maximal_support" name="maximal_support" min="0" value="0">
+            </div>
+            <div class="form-group">
+                <label for="incorrect">Incorrect</label>
+                <input type="number" id="incorrect" name="incorrect" min="0" value="0">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="notes">Trial Notes</label>
+            <textarea id="notes" name="notes" rows="2" placeholder="Notes about this trial set..."></textarea>
+        </div>
+        
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <button type="submit" class="btn btn-success">Add Trial Data</button>
+            <div id="live-stats" style="font-size: 14px; color: #666;"></div>
+        </div>
+    </form>
+</div>
+{% endif %}
+
+<style>
+.session-overview {
+    margin: 20px 0;
+}
+
+.overview-stats {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.stat-box {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    min-width: 120px;
+    border-left: 4px solid #007bff;
+}
+
+.stat-number {
+    font-size: 24px;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #666;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.student-section {
+    margin-bottom: 30px;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.student-header {
+    background: #f8f9fa;
+    padding: 15px 20px;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.student-header h3 {
+    margin: 0;
+    color: #2c3e50;
+}
+
+.student-summary {
+    font-size: 14px;
+    color: #666;
+}
+
+.objectives-container {
+    padding: 20px;
+}
+
+.objective-section {
+    margin-bottom: 25px;
+}
+
+.objective-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.objective-header h4 {
+    margin: 0;
+    color: #495057;
+    font-size: 16px;
+}
+
+.objective-meta {
+    font-size: 12px;
+    color: #999;
+}
+
+.trials-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 15px;
+}
+
+.trial-card {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 15px;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.trial-header {
+    margin-bottom: 15px;
+}
+
+.trial-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.accuracy-badge {
+    background: #28a745;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.trial-notes {
+    font-style: italic;
+    color: #666;
+    font-size: 13px;
+    margin-top: 8px;
+}
+
+.trial-breakdown {
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+}
+
+.breakdown-row {
+    display: flex;
+    gap: 8px;
+}
+
+.breakdown-item {
+    flex: 1;
+    text-align: center;
+    padding: 8px 4px;
+    border-radius: 4px;
+    min-height: 60px;
+}
+
+.breakdown-item.independent { background: #d4edda; }
+.breakdown-item.minimal { background: #cce5ff; }
+.breakdown-item.moderate { background: #ffe4b3; }
+.breakdown-item.maximal { background: #e2e3e5; }
+.breakdown-item.incorrect { background: #f5c6cb; }
+
+.breakdown-value {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 2px;
+}
+
+.breakdown-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+.breakdown-percent {
+    font-size: 11px;
+    color: #666;
+}
+
+.trial-input-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+/* Compact view */
+.compact-view .trials-grid {
+    grid-template-columns: 1fr;
+}
+
+.compact-view .breakdown-row {
+    justify-content: space-around;
+}
+
+.compact-view .breakdown-item {
+    flex: 0 0 auto;
+    min-width: 60px;
+}
+</style>
+
+<script>
+let isCompactView = false;
+
+function toggleView() {
+    isCompactView = !isCompactView;
+    const container = document.getElementById('student-data-container');
+    const button = document.querySelector('button[onclick="toggleView()"]');
+    
+    if (isCompactView) {
+        container.classList.add('compact-view');
+        button.textContent = 'Expand View';
+    } else {
+        container.classList.remove('compact-view');
+        button.textContent = 'Toggle Compact View';
+    }
+}
+
+// Live calculation updates
+function updateLiveStats() {
+    const independent = parseInt(document.getElementById('independent')?.value) || 0;
+    const minimal = parseInt(document.getElementById('minimal_support')?.value) || 0;
+    const moderate = parseInt(document.getElementById('moderate_support')?.value) || 0;
+    const maximal = parseInt(document.getElementById('maximal_support')?.value) || 0;
+    const incorrect = parseInt(document.getElementById('incorrect')?.value) || 0;
+    
+    const total = independent + minimal + moderate + maximal + incorrect;
+    const successful = independent + minimal + moderate + maximal;
+    
+    const liveStats = document.getElementById('live-stats');
+    if (total > 0) {
+        const accuracy = Math.round((successful / total) * 100);
+        const independence = Math.round((independent / total) * 100);
+        liveStats.innerHTML = `<strong>${total} trials • ${accuracy}% accuracy • ${independence}% independent</strong>`;
+    } else {
+        liveStats.innerHTML = '';
+    }
+}
+
+// Attach event listeners if form exists
+if (document.getElementById('trialForm')) {
     ['independent', 'minimal_support', 'moderate_support', 'maximal_support', 'incorrect'].forEach(id => {
-        document.getElementById(id).addEventListener('input', updateCalculations);
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('input', updateLiveStats);
+        }
     });
     
     // Form submission
@@ -175,7 +498,7 @@
         .then(data => {
             // Reset form
             this.reset();
-            updateCalculations();
+            updateLiveStats();
             
             // Reload the page to show new trial data
             location.reload();
@@ -184,5 +507,6 @@
             alert('Error saving trial data: ' + error);
         });
     });
+}
 </script>
 {% endblock %}
