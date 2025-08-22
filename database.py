@@ -128,6 +128,11 @@ def init_db():
             conn.execute('ALTER TABLE students ADD COLUMN next_triennial_assessment DATE')
         except sqlite3.OperationalError:
             pass  # Column already exists
+
+        try:
+            conn.execute('ALTER TABLE students ADD COLUMN school TEXT')
+        except sqlite3.OperationalError:
+            pass  # Column already exists
         
         # Create indexes for better performance
         conn.execute('CREATE INDEX IF NOT EXISTS idx_goals_student ON goals(student_id)')

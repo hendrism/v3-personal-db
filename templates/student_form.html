@@ -37,8 +37,9 @@
             </div>
         </div>
         
-        <div class="form-group">
-            <label for="grade_level">Grade Level</label>
+        <div class="grid grid-2">
+            <div class="form-group">
+                <label for="grade_level">Grade Level</label>
             <select id="grade_level" name="grade_level">
                 <option value="">Select grade level</option>
                 <option value="Pre-K" {{ 'selected' if student and student.grade_level == 'Pre-K' else '' }}>Pre-K</option>
@@ -56,6 +57,12 @@
                 <option value="11th Grade" {{ 'selected' if student and student.grade_level == '11th Grade' else '' }}>11th Grade</option>
                 <option value="12th Grade" {{ 'selected' if student and student.grade_level == '12th Grade' else '' }}>12th Grade</option>
             </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="school">School</label>
+                <input type="text" id="school" name="school" value="{{ student.school if student else '' }}" placeholder="School name">
+            </div>
         </div>
         
         <div class="grid grid-2">

@@ -63,6 +63,7 @@ def new_student():
             'grade_level': request.form.get('grade_level'),
             'preferred_name': request.form.get('preferred_name'),
             'pronouns': request.form.get('pronouns'),
+            'school': request.form.get('school'),
             'notes': request.form.get('notes'),
             'next_annual_review': request.form.get('next_annual_review') or None,
             'next_triennial_assessment': request.form.get('next_triennial_assessment') or None

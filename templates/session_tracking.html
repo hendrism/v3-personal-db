@@ -1016,6 +1016,25 @@ class SessionTracker {
         // Reset select
         studentSelect.value = '';
     }
+
+    async addPreloadedStudent(studentId, studentName, sessionId) {
+        const studentData = { 
+            id: studentId, 
+            name: studentName,
+            sessionId: sessionId 
+        };
+        
+        this.students.set(studentId, studentData);
+        await this.renderStudentCard(studentData);
+        
+        // Show session controls if this is the first student
+        if (this.students.size === 1) {
+            document.getElementById('session-controls').style.display = 'block';
+        }
+        
+        // Update tabs
+        this.updateStudentTabs();
+    }
     
     updateStudentTabs() {
         const tabsContainer = document.querySelector('.tabs-container');
@@ -2176,7 +2195,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Add all pre-loaded students
         {% for student in pre_loaded_students %}
-        sessionTracker.addStudentToSession({{ student.id }}, '{{ student.name }}', {{ student.session_id }});
+        sessionTracker.addPreloadedStudent({{ student.id }}, '{{ student.name }}', {{ student.session_id }});
         {% endfor %}
         
         // Show notification

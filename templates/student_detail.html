@@ -23,6 +23,9 @@ Details{% endblock %} {% block content %}
         <strong>Preferred Name:</strong> {{ student.preferred_name }}<br />
         {% endif %}
         <strong>Grade Level:</strong> {{ student.grade_level }}<br />
+        {% if student.school %}
+        <strong>School:</strong> {{ student.school }}<br />
+        {% endif %}
         {% if student.pronouns %}
         <strong>Pronouns:</strong> {{ student.pronouns }}<br />
         {% endif %}
@@ -455,7 +458,7 @@ Details{% endblock %} {% block content %}
         >Set School Schedule</a
       >
       {% endif %}
-      <a href="{{ url_for('students.students') }}" class="btn btn-outline"
+      <a href="{{ url_for('students.list_students') }}" class="btn btn-outline"
         >Back to Students</a
       >
     </div>

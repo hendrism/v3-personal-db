@@ -10,10 +10,6 @@
         <div class="stat-label">Active Students</div>
     </div>
     <div class="stat-card">
-        <div class="stat-number">{{ stats.total_schools }}</div>
-        <div class="stat-label">Schools</div>
-    </div>
-    <div class="stat-card">
         <div class="stat-number">{{ stats.sessions_this_week }}</div>
         <div class="stat-label">Sessions This Week</div>
     </div>
@@ -88,48 +84,6 @@
     </div>
 </div>
 
-<!-- Schools & Schedules -->
-<div class="card">
-    <h2>Schools & Schedules</h2>
-    {% if recent_schools %}
-        <div style="margin-bottom: 1rem;">
-            {% for school_info in recent_schools %}
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; margin-bottom: 0.5rem; background: #f8f9fa; border-radius: 4px; border-left: 4px solid #3498db;">
-                <div>
-                    <a href="/schools/{{ school_info.school.id }}" style="text-decoration: none; font-weight: 500; color: #3498db;">
-                        {{ school_info.school.name }}
-                    </a>
-                    <div style="font-size: 0.9rem; color: #666; margin-top: 0.25rem;">
-                        {{ school_info.student_count }} student{% if school_info.student_count != 1 %}s{% endif %}
-                        • 
-                        {% if school_info.school.schedule_type == 'thomas_stone' %}
-                            Extension Rotation
-                            {% if school_info.school.current_extension != 'regular' %}
-                                ({{ school_info.school.current_extension|replace('_', ' ')|title }})
-                            {% endif %}
-                        {% else %}
-                            Simple Schedule
-                        {% endif %}
-                    </div>
-                </div>
-                <div>
-                    <a href="/schools/{{ school_info.school.id }}" class="btn btn-sm">View</a>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        
-        <div style="text-align: center; margin-top: 1rem;">
-            <a href="/schools" class="btn">View All Schools</a>
-            <a href="/schools/new" class="btn btn-success" style="margin-left: 0.5rem;">+ Add School</a>
-        </div>
-    {% else %}
-        <div style="text-align: center; padding: 2rem;">
-            <p class="text-muted">No schools added yet.</p>
-            <a href="/schools/new" class="btn btn-success mt-1">Add Your First School</a>
-        </div>
-    {% endif %}
-</div>
 
 <!-- Quick Actions -->
 <div class="card">
@@ -156,9 +110,9 @@
             <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">📚</div>
             View All Students
         </a>
-        <a href="/schools" class="btn">
-            <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">🏫</div>
-            Manage Schools
+        <a href="{{ url_for('students.new_student') }}" class="btn">
+            <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">👤</div>
+            Add Student
         </a>
     </div>
 </div>
