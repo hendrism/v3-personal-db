@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block title %}Daily Planner - {{ selected_date }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 class="mb-0">Daily Session Planner</h2>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <input type="date" id="dateSelector" value="{{ selected_date }}" 
+                   onchange="changeDate(this.value)" 
+                   style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            <a href="/sessions" class="btn btn-outline">All Sessions</a>
+        </div>
+    </div>
+    
+    <!-- Quick Date Navigation -->
+    <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 4px;">
+        <div style="display: flex; gap: 10px; align-items: center; justify-content: center;">
+            <button onclick="navigateDay(-1)" class="btn btn-sm">← Yesterday</button>
+            <button onclick="navigateToToday()" class="btn btn-sm btn-primary">Today</button>
+            <button onclick="navigateDay(1)" class="btn btn-sm">Tomorrow →</button>
+        </div>
+    </div>
+    
+    <!-- Scheduled Sessions for Selected Date -->
+    {% if grouped_sessions %}
+    <div class="card" style="margin-bottom: 2rem;">
+        <h3>Scheduled Sessions for {{ selected_date }}</h3>
+        <div class="sessions-timeline">
+            {% for session_group in grouped_sessions %}
+            <div class="session-block" style="display: flex; justify-content: space-between; align-items: center; 
+                 padding: 1rem; margin-bottom: 1rem; border-left: 4px solid 
+                 {% if session_group.session_type == 'Group' %}#28a745{% else %}#007bff{% endif %}; 
+                 background: #f8f9fa; border-radius: 4px;">
+                
+                <div style="flex: 1;">
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <div class="time-display" style="font-weight: bold; color: #2c3e50;">
+                            {% if session_group.start_time_12h and session_group.end_time_12h %}
+                                {{ session_group.start_time_12h }} - {{ session_group.end_time_12h }}
+                            {% elif session_group.start_time_12h %}
+                                {{ session_group.start_time_12h }}
+                            {% else %}
+                                No time set
+                            {% endif %}
+                        </div>
+                        
+                        <div class="session-type-badge" 
+                             style="padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.8rem; font-weight: 500;
+                             {% if session_group.session_type == 'Group' %}
+                                 background: #d4edda; color: #155724;
+                             {% else %}
+                                 background: #d1ecf1; color: #0c5460;
+                             {% endif %}">
+                            {{ session_group.session_type }}
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 8px;">
+                        <strong>Students:</strong>
+                        {% for student in session_group.students %}
+                            <span style="background: #e9ecef; padding: 0.2rem 0.5rem; border-radius: 8px; margin-right: 5px; font-size: 0.9rem;">
+                                {{ student.name }}
+                            </span>
+                        {% endfor %}
+                    </div>
+                    
+                    {% if session_group.location %}
+                    <div style="margin-top: 5px; color: #6c757d; font-size: 0.9rem;">
+                        📍 {{ session_group.location }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <a href="/planner/start-session/{{ session_group.session_ids[0] }}" 
+                       class="btn btn-success">🎯 Start Tracking</a>
+                    <a href="/sessions/{{ session_group.session_ids[0] }}" 
+                       class="btn btn-outline btn-sm">View Details</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Quick Session Builder -->
+    <div class="card">
+        <h3>Add Sessions for {{ selected_date }}</h3>
+        <div id="sessionBuilder">
+            <div id="sessionSlots">
+                <!-- Session slots will be added here dynamically -->
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <button onclick="addSessionSlot()" class="btn btn-success">+ Add Time Slot</button>
+                <button onclick="saveAllSessions()" class="btn btn-primary" style="margin-left: 10px;">💾 Save All Sessions</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Session Slot Template -->
+<template id="sessionSlotTemplate">
+    <div class="session-slot" style="border: 1px solid #ddd; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem; background: white;">
+        <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 1rem;">
+            <h4 style="margin: 0; color: #2c3e50;">Time Slot</h4>
+            <button onclick="removeSessionSlot(this)" class="btn btn-sm btn-outline" style="color: #dc3545; border-color: #dc3545;">✕ Remove</button>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 15px; margin-bottom: 1rem;">
+            <div>
+                <label>Start Time:</label>
+                <input type="time" class="start-time" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" required>
+            </div>
+            <div>
+                <label>End Time:</label>
+                <input type="time" class="end-time" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div>
+                <label>Location:</label>
+                <input type="text" class="location" placeholder="Optional" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 1rem;">
+            <label>Select Students:</label>
+            <div class="student-selection" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 10px; background: #f8f9fa;">
+                {% for student in students %}
+                <label style="display: block; margin-bottom: 5px; cursor: pointer;">
+                    <input type="checkbox" value="{{ student.id }}" style="margin-right: 8px;">
+                    {{ student.display_name }}
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div>
+            <label>Notes:</label>
+            <textarea class="session-notes" placeholder="Optional session notes..." 
+                     style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; height: 60px;"></textarea>
+        </div>
+    </div>
+</template>
+
+<style>
+.sessions-timeline {
+    position: relative;
+}
+
+.session-block {
+    transition: all 0.2s ease;
+}
+
+.session-block:hover {
+    transform: translateX(5px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.session-slot {
+    transition: all 0.2s ease;
+}
+
+.session-slot:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.student-selection label:hover {
+    background: #e9ecef;
+    border-radius: 4px;
+    padding: 2px 5px;
+}
+</style>
+
+<script>
+function changeDate(newDate) {
+    window.location.href = `/planner?date=${newDate}`;
+}
+
+function navigateDay(offset) {
+    const currentDate = new Date('{{ selected_date }}');
+    currentDate.setDate(currentDate.getDate() + offset);
+    const newDate = currentDate.toISOString().split('T')[0];
+    changeDate(newDate);
+}
+
+function navigateToToday() {
+    const today = new Date().toISOString().split('T')[0];
+    changeDate(today);
+}
+
+function addSessionSlot() {
+    const template = document.getElementById('sessionSlotTemplate');
+    const sessionSlots = document.getElementById('sessionSlots');
+    const clone = template.content.cloneNode(true);
+    sessionSlots.appendChild(clone);
+}
+
+function removeSessionSlot(button) {
+    const sessionSlot = button.closest('.session-slot');
+    sessionSlot.remove();
+}
+
+function saveAllSessions() {
+    const slots = document.querySelectorAll('.session-slot');
+    const sessionsData = [];
+    
+    for (let slot of slots) {
+        const startTime = slot.querySelector('.start-time').value;
+        const endTime = slot.querySelector('.end-time').value;
+        const location = slot.querySelector('.location').value;
+        const notes = slot.querySelector('.session-notes').value;
+        
+        const selectedStudents = [];
+        const checkboxes = slot.querySelectorAll('.student-selection input[type="checkbox"]:checked');
+        checkboxes.forEach(cb => selectedStudents.push(parseInt(cb.value)));
+        
+        if (startTime && selectedStudents.length > 0) {
+            sessionsData.push({
+                date: '{{ selected_date }}',
+                start_time: startTime,
+                end_time: endTime || null,
+                location: location,
+                notes: notes,
+                student_ids: selectedStudents
+            });
+        }
+    }
+    
+    if (sessionsData.length === 0) {
+        alert('Please add at least one session with a start time and selected students.');
+        return;
+    }
+    
+    // Send to server
+    fetch('/planner', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ sessions: sessionsData })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Successfully created ${data.sessions_created} sessions!`);
+            window.location.reload();
+        } else {
+            alert('Error creating sessions. Please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error creating sessions. Please try again.');
+    });
+}
+
+// Add first session slot by default
+document.addEventListener('DOMContentLoaded', function() {
+    addSessionSlot();
+});
+</script>
+{% endblock %}

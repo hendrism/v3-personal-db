@@ -6,9 +6,10 @@
 <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
         <h2 class="mb-0">SOAP Note</h2>
-        <div>
+        <div style="display: flex; gap: 10px;">
             <button onclick="generateSOAP()" class="btn btn-warning">🤖 Auto-Generate</button>
-            <a href="/sessions/{{ session.id }}" class="btn">Back to Session</a>
+            <a href="/sessions/{{ session.id }}" class="btn btn-outline">Back to Session</a>
+            <a href="/planner" class="btn btn-outline">📅 Back to Planner</a>
         </div>
     </div>
     

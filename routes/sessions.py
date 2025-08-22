@@ -148,12 +148,58 @@ def session_tracking():
     db = get_db()
     students = Student.get_active(db)
     
+    # Check if we're linking to a specific session
+    linked_session_id = request.args.get('linked_session')
+    linked_session = None
+    pre_loaded_students = []
+    
+    if linked_session_id:
+        # Get the linked session information
+        linked_session = Session.get_by_id(db, int(linked_session_id))
+        if linked_session:
+            # Find all sessions with same date/time/type (for group sessions)
+            group_sessions = db.execute('''
+                SELECT s.*, st.first_name, st.last_name
+                FROM sessions s 
+                JOIN students st ON s.student_id = st.id
+                WHERE s.session_date = ? AND s.start_time = ? AND s.session_type = ?
+                ORDER BY st.first_name, st.last_name
+            ''', (linked_session.session_date, linked_session.start_time, linked_session.session_type)).fetchall()
+            
+            for session_row in group_sessions:
+                student = Student.get_by_id(db, session_row['student_id'])
+                pre_loaded_students.append({
+                    'id': student.id,
+                    'name': student.display_name,
+                    'session_id': session_row['id']
+                })
+    
     # Get existing sessions for optional linking
-    recent_sessions = Session.get_recent_with_student_info(db, limit=20)
+    recent_sessions_raw = Session.get_recent_with_student_info(db, limit=20)
+    
+    # Convert to JSON-serializable format
+    recent_sessions = []
+    for session in recent_sessions_raw:
+        recent_sessions.append({
+            'id': session.id,
+            'student_id': session.student_id,
+            'student_name': session.student_name,
+            'session_date': session.session_date,
+            'start_time': session.start_time,
+            'end_time': session.end_time,
+            'start_time_12h': session.start_time_12h,
+            'end_time_12h': session.end_time_12h,
+            'session_type': session.session_type,
+            'location': session.location or '',
+            'status': session.status,
+            'has_soap_note': session.has_soap_note
+        })
     
     return render_template('session_tracking.html', 
                          students=students, 
-                         recent_sessions=recent_sessions)
+                         recent_sessions=recent_sessions,
+                         linked_session=linked_session,
+                         pre_loaded_students=pre_loaded_students)
 
 @sessions_bp.route('/api/students/<int:student_id>/goals')
 def get_student_goals(student_id):

@@ -132,8 +132,25 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Confirm before leaving if there are available students
+// Track if we're submitting a form to avoid unnecessary warnings
+let isSubmittingForm = false;
+
+// Set flag when forms are submitted
+document.addEventListener('DOMContentLoaded', function() {
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => {
+        form.addEventListener('submit', function() {
+            isSubmittingForm = true;
+        });
+    });
+});
+
+// Confirm before leaving if there are available students (but not during form submission)
 window.addEventListener('beforeunload', function(e) {
+    if (isSubmittingForm) {
+        return; // Don't show warning during form submission
+    }
+    
     const availableStudents = {{ available_students|length if available_students else 0 }};
     const existingStudents = {{ existing_students|length if existing_students else 0 }};
     

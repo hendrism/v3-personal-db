@@ -18,13 +18,15 @@
                 {% endif %}
             </p>
         </div>
-        <div>
+        <div style="display: flex; gap: 10px;">
             {% if not soap_note %}
-                <a href="/soap/{{ session.id }}" class="btn btn-warning">Create SOAP Note</a>
+                <a href="/soap/{{ session.id }}" class="btn btn-success btn-lg">📝 Create SOAP Note</a>
+                <p style="margin: 0; font-size: 0.9rem; color: #28a745; align-self: center;">Ready to document!</p>
             {% else %}
-                <a href="/soap/{{ session.id }}" class="btn">View SOAP Note</a>
+                <a href="/soap/{{ session.id }}" class="btn btn-primary">📄 View SOAP Note</a>
+                <a href="/soap/{{ session.id }}?edit=true" class="btn btn-outline">✏️ Edit SOAP</a>
             {% endif %}
-            <a href="/sessions" class="btn">Back to Sessions</a>
+            <a href="/planner" class="btn btn-outline">📅 Back to Planner</a>
         </div>
     </div>
     

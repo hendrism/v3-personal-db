@@ -114,11 +114,11 @@ class Session(BaseModel):
     def create(cls, db, data):
         cursor = db.execute('''
             INSERT INTO sessions (student_id, session_date, start_time, end_time,
-                                session_type, location, notes)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+                                session_type, location, notes, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ''', (data['student_id'], data['session_date'], data.get('start_time'),
               data.get('end_time'), data.get('session_type', 'Individual'),
-              data.get('location'), data.get('notes')))
+              data.get('location'), data.get('notes'), data.get('status')))
 
         session_id = cursor.lastrowid
         db.commit()

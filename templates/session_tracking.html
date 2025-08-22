@@ -6,14 +6,23 @@
 <div class="container">
     <div class="page-header">
         <h1>Live Session Tracking</h1>
+        {% if linked_session %}
+        <div style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; padding: 10px; margin-bottom: 15px;">
+            <strong>📅 Session Linked:</strong> 
+            {{ linked_session.session_date }} 
+            {% if linked_session.start_time_12h %}at {{ linked_session.start_time_12h }}{% endif %}
+            ({{ linked_session.session_type }})
+            <small style="color: #155724;"> - Session information pre-loaded</small>
+        </div>
+        {% endif %}
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
                 <p class="text-muted">Track trials and data for multiple students in real-time</p>
                 <p style="font-size: 12px; color: #999; margin: 0;">Press <strong>?</strong> for keyboard shortcuts</p>
             </div>
             <div style="display: flex; gap: 10px;">
+                <a href="/planner" class="btn btn-outline">📅 Back to Planner</a>
                 <a href="/sessions" class="btn btn-outline">View Past Sessions</a>
-                <a href="/sessions/new" class="btn btn-secondary">Quick Add Session</a>
             </div>
         </div>
     </div>
@@ -106,9 +115,62 @@
         
         <div style="display: flex; gap: 1rem; margin-top: 20px; flex-wrap: wrap;">
             <button id="save-session-btn" class="btn btn-success">💾 Save Session Data</button>
-            <button id="end-session-btn" class="btn btn-primary">🏁 End Session & Review</button>
+            <button id="end-session-btn" class="btn btn-primary" onclick="sessionTracker.showCompletionModal()">🏁 End Session & Review</button>
             <button id="clear-session-btn" class="btn btn-outline">🗑️ Clear All Data</button>
             <button id="export-data-btn" class="btn btn-outline">📊 Export Data</button>
+        </div>
+    </div>
+</div>
+
+<!-- Session Completion Modal -->
+<div id="completion-modal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 800px; max-height: 80vh; overflow-y: auto;">
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; padding-bottom: 15px; margin-bottom: 20px;">
+            <h3>🏁 Session Completion Review</h3>
+            <button onclick="sessionTracker.hideCompletionModal()" class="btn btn-outline">✕ Close</button>
+        </div>
+        
+        <div class="modal-body">
+            <!-- Status Check Section -->
+            <div class="completion-section">
+                <h4>📋 Session Status Check</h4>
+                <div id="status-warnings" class="status-warnings">
+                    <!-- Warnings will be populated here -->
+                </div>
+            </div>
+            
+            <!-- Session Summary -->
+            <div class="completion-section">
+                <h4>📊 Session Summary</h4>
+                <div id="completion-summary" class="completion-summary">
+                    <!-- Summary will be populated here -->
+                </div>
+            </div>
+            
+            <!-- Editable Summary -->
+            <div class="completion-section">
+                <h4>✏️ Review & Edit Data</h4>
+                <p class="text-muted">Review and modify any trial counts before saving:</p>
+                <div id="editable-summary" class="editable-summary">
+                    <!-- Editable trial data will be populated here -->
+                </div>
+            </div>
+            
+            <!-- Final Actions -->
+            <div class="completion-section">
+                <h4>💾 Complete Session</h4>
+                <div style="display: flex; gap: 15px; margin-top: 15px; justify-content: center;">
+                    <button onclick="sessionTracker.saveAndComplete()" class="btn btn-success btn-lg">
+                        ✅ Save & Complete Session
+                    </button>
+                    <button onclick="sessionTracker.saveAndCreateSOAP()" class="btn btn-primary btn-lg">
+                        📝 Save & Create SOAP Note
+                    </button>
+                </div>
+                <p class="text-muted" style="text-align: center; margin-top: 10px; font-size: 0.9rem;">
+                    You can always create SOAP notes later from the session details page
+                </p>
+            </div>
         </div>
     </div>
 </div>
@@ -257,6 +319,87 @@
 </template>
 
 <style>
+/* Modal Styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.completion-section {
+    margin-bottom: 25px;
+    padding: 15px;
+    border-radius: 8px;
+    background: #f8f9fa;
+}
+
+.completion-section h4 {
+    margin: 0 0 15px 0;
+    color: #2c3e50;
+}
+
+.status-warnings .warning {
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+}
+
+.completion-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.summary-card {
+    background: white;
+    padding: 15px;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+    text-align: center;
+}
+
+.editable-summary {
+    background: white;
+    padding: 15px;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+}
+
+.editable-trial-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    margin-bottom: 10px;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.editable-trial-row input {
+    width: 60px;
+    padding: 5px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-align: center;
+}
+
 .student-card {
     margin-bottom: 20px;
     border: 2px solid #ddd;
@@ -1818,12 +1961,228 @@ class SessionTracker {
             helpDiv.classList.toggle('hidden');
         }
     }
+    
+    // Session Completion Modal Methods
+    showCompletionModal() {
+        const modal = document.getElementById('completion-modal');
+        
+        // Populate status warnings
+        this.checkSessionStatus();
+        
+        // Populate session summary
+        this.generateSessionSummary();
+        
+        // Populate editable summary
+        this.generateEditableSummary();
+        
+        // Show modal
+        modal.style.display = 'flex';
+    }
+    
+    hideCompletionModal() {
+        const modal = document.getElementById('completion-modal');
+        modal.style.display = 'none';
+    }
+    
+    checkSessionStatus() {
+        const warnings = [];
+        const warningsContainer = document.getElementById('status-warnings');
+        
+        // Check if all students have status set
+        this.students.forEach((student, studentId) => {
+            const statusSelect = document.querySelector(`.student-card[data-student-id="${studentId}"] .student-status`);
+            if (!statusSelect || !statusSelect.value) {
+                warnings.push(`${student.name}: Session status not set`);
+            }
+        });
+        
+        // Check if there's any trial data
+        const hasTrials = Array.from(this.trialData.values()).some(data => 
+            data.independent + data.minimal_support + data.moderate_support + data.maximal_support + data.incorrect > 0
+        );
+        
+        if (!hasTrials) {
+            warnings.push('No trial data recorded for this session');
+        }
+        
+        // Display warnings
+        if (warnings.length > 0) {
+            warningsContainer.innerHTML = warnings.map(warning => 
+                `<div class="warning">⚠️ ${warning}</div>`
+            ).join('');
+        } else {
+            warningsContainer.innerHTML = '<div style="color: #28a745; padding: 10px;">✅ All session requirements completed!</div>';
+        }
+    }
+    
+    generateSessionSummary() {
+        const summaryContainer = document.getElementById('completion-summary');
+        
+        let totalStudents = this.students.size;
+        let totalGoals = this.goals.size;
+        let totalObjectives = this.objectives.size;
+        let totalTrials = 0;
+        
+        this.trialData.forEach(data => {
+            totalTrials += data.independent + data.minimal_support + data.moderate_support + data.maximal_support + data.incorrect;
+        });
+        
+        summaryContainer.innerHTML = `
+            <div class="summary-card">
+                <h5 style="margin: 0 0 10px 0; color: #007bff;">${totalStudents}</h5>
+                <div>Students</div>
+            </div>
+            <div class="summary-card">
+                <h5 style="margin: 0 0 10px 0; color: #28a745;">${totalGoals}</h5>
+                <div>Goals Tracked</div>
+            </div>
+            <div class="summary-card">
+                <h5 style="margin: 0 0 10px 0; color: #ffc107;">${totalObjectives}</h5>
+                <div>Objectives</div>
+            </div>
+            <div class="summary-card">
+                <h5 style="margin: 0 0 10px 0; color: #dc3545;">${totalTrials}</h5>
+                <div>Total Trials</div>
+            </div>
+        `;
+    }
+    
+    generateEditableSummary() {
+        const editableContainer = document.getElementById('editable-summary');
+        let html = '';
+        
+        this.objectives.forEach((objective, objectiveId) => {
+            const trialData = this.trialData.get(objectiveId) || {
+                independent: 0, minimal_support: 0, moderate_support: 0, 
+                maximal_support: 0, incorrect: 0
+            };
+            
+            const student = this.students.get(objective.studentId);
+            const goal = this.goals.get(objective.goalId);
+            
+            html += `
+                <div class="objective-edit-section" data-objective-id="${objectiveId}" style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 6px;">
+                    <h5 style="margin: 0 0 10px 0;">${student?.name} - ${goal?.description}</h5>
+                    <p style="margin: 0 0 15px 0; color: #666; font-size: 0.9rem;">${objective.description}</p>
+                    
+                    <div class="trial-edit-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;">
+                        <div class="editable-trial-row">
+                            <label>Independent:</label>
+                            <input type="number" min="0" value="${trialData.independent}" data-type="independent">
+                        </div>
+                        <div class="editable-trial-row">
+                            <label>Min Support:</label>
+                            <input type="number" min="0" value="${trialData.minimal_support}" data-type="minimal_support">
+                        </div>
+                        <div class="editable-trial-row">
+                            <label>Mod Support:</label>
+                            <input type="number" min="0" value="${trialData.moderate_support}" data-type="moderate_support">
+                        </div>
+                        <div class="editable-trial-row">
+                            <label>Max Support:</label>
+                            <input type="number" min="0" value="${trialData.maximal_support}" data-type="maximal_support">
+                        </div>
+                        <div class="editable-trial-row">
+                            <label>Incorrect:</label>
+                            <input type="number" min="0" value="${trialData.incorrect}" data-type="incorrect">
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        if (html === '') {
+            html = '<p class="text-muted">No objectives tracked in this session.</p>';
+        }
+        
+        editableContainer.innerHTML = html;
+        
+        // Add event listeners to update trial data when inputs change
+        editableContainer.querySelectorAll('input[type="number"]').forEach(input => {
+            input.addEventListener('change', (e) => {
+                const objectiveId = parseInt(e.target.closest('.objective-edit-section').dataset.objectiveId);
+                const trialType = e.target.dataset.type;
+                const value = parseInt(e.target.value) || 0;
+                
+                if (!this.trialData.has(objectiveId)) {
+                    this.trialData.set(objectiveId, {
+                        independent: 0, minimal_support: 0, moderate_support: 0, 
+                        maximal_support: 0, incorrect: 0
+                    });
+                }
+                
+                this.trialData.get(objectiveId)[trialType] = value;
+                
+                // Update the display in the main tracking interface
+                this.updateObjectiveDisplay(objectiveId);
+            });
+        });
+    }
+    
+    async saveAndComplete() {
+        try {
+            await this.saveSessionData(false);
+            alert('Session saved successfully! 🎉');
+            this.hideCompletionModal();
+            // Optionally redirect to sessions list or dashboard
+            window.location.href = '/planner';
+        } catch (error) {
+            alert('Error saving session. Please try again.');
+            console.error('Save error:', error);
+        }
+    }
+    
+    async saveAndCreateSOAP() {
+        try {
+            const result = await this.saveSessionData(true);
+            alert('Session saved successfully! Redirecting to SOAP note creation...');
+            this.hideCompletionModal();
+            
+            // Redirect to SOAP note creation for the first student's session
+            const firstStudentSession = Array.from(this.students.values())[0];
+            if (firstStudentSession && result.session_ids && result.session_ids.length > 0) {
+                window.location.href = `/soap/${result.session_ids[0]}`;
+            } else {
+                window.location.href = '/planner';
+            }
+        } catch (error) {
+            alert('Error saving session. Please try again.');
+            console.error('Save error:', error);
+        }
+    }
 }
 
 // Initialize the session tracker when page loads
 let sessionTracker;
 document.addEventListener('DOMContentLoaded', () => {
     sessionTracker = new SessionTracker();
+    
+    // Auto-load students if coming from planner
+    {% if linked_session and pre_loaded_students %}
+    setTimeout(() => {
+        // Pre-fill session information
+        document.getElementById('session-date').value = '{{ linked_session.session_date }}';
+        document.getElementById('start-time').value = '{{ linked_session.start_time }}';
+        {% if linked_session.end_time %}
+        document.getElementById('end-time').value = '{{ linked_session.end_time }}';
+        {% endif %}
+        document.getElementById('session-type').value = '{{ linked_session.session_type }}';
+        {% if linked_session.location %}
+        document.getElementById('location').value = '{{ linked_session.location }}';
+        {% endif %}
+        {% if linked_session.notes %}
+        document.getElementById('session-notes').value = '{{ linked_session.notes }}';
+        {% endif %}
+        
+        // Add all pre-loaded students
+        {% for student in pre_loaded_students %}
+        sessionTracker.addStudentToSession({{ student.id }}, '{{ student.name }}', {{ student.session_id }});
+        {% endfor %}
+        
+        // Show notification
+        alert('Session loaded with {{ pre_loaded_students|length }} student{% if pre_loaded_students|length != 1 %}s{% endif %}. You can now start tracking data!');
+    }, 500);
+    {% endif %}
 });
 
 // Global function for toggle button
