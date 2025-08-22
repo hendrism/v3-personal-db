@@ -1,11 +1,11 @@
 from flask import Blueprint, render_template, request, redirect, url_for
 from database import get_db
-from models import Student, Session, Goal, Objective, TrialLog, SOAPNote, School, StudentSchedule
+from models import Student, Session, Goal, Objective, TrialLog, SOAPNote
 
 students_bp = Blueprint('students', __name__)
 
 @students_bp.route('/students')
-def students():
+def list_students():
     """List all students."""
     db = get_db()
     students = Student.get_all(db)
@@ -44,8 +44,9 @@ def student_detail(student_id):
         session = soap.get_session(db)
         soap.session_date = session.session_date if session else 'Unknown'
 
-    student_schedule = StudentSchedule.get_by_student(db, student_id)
-    schools = {school.id: school for school in School.get_all(db)}
+    # School functionality removed for simplification
+    student_schedule = None
+    schools = {}
 
     return render_template('student_detail.html', student=student, sessions=sessions, goals=goals,
                            goals_with_objectives=goals_with_objectives, recent_trials=recent_trials,
@@ -132,30 +133,8 @@ def new_objective(goal_id):
 
 @students_bp.route('/students/<int:student_id>/schedule', methods=['GET', 'POST'])
 def student_schedule(student_id):
-    db = get_db()
-    student = Student.get_by_id(db, student_id)
-    if not student:
-        return "Student not found", 404
-    schedule = StudentSchedule.get_by_student(db, student_id)
-    schools = School.get_all(db)
-    if request.method == 'POST':
-        if not schedule:
-            schedule = StudentSchedule(student_id=student_id)
-        schedule.school_id = request.form['school_id']
-        schedule.lunch_type = request.form.get('lunch_type', 'A')
-        classes = {}
-        for period in range(1,9):
-            class_name = request.form.get(f'period_{period}', '').strip()
-            room_number = request.form.get(f'room_{period}', '').strip()
-            if class_name or room_number:
-                classes[str(period)] = {
-                    'name': class_name,
-                    'room': room_number
-                }
-        schedule.classes = classes
-        schedule.save(db)
-        return redirect(url_for('students.student_detail', student_id=student_id))
-    return render_template('student_schedule_form.html', student=student, schedule=schedule, schools=schools)
+    # School functionality removed - redirect to student detail
+    return redirect(url_for('students.student_detail', student_id=student_id))
 
 
 @students_bp.route('/goals/<int:goal_id>/edit', methods=['GET', 'POST'])

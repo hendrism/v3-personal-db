@@ -123,7 +123,6 @@ class Session(BaseModel):
         session_id = cursor.lastrowid
         db.commit()
         return cls.get_by_id(db, session_id)
-    # Add these methods to the Session class in models/session.py
 
 
     @classmethod
@@ -209,40 +208,6 @@ class TrialLog(BaseModel):
                       self.moderate_support + self.maximal_support)
         return round((successful / total) * 100, 1) if total > 0 else 0
     
-    def total_trials_new(self):
-        """Calculate the total number of trials recorded using new columns."""
-        return (
-            (self.independent or 0) +
-            (self.minimal_support or 0) +
-            (self.moderate_support or 0) +
-            (self.maximal_support or 0) +
-            (self.incorrect or 0)
-        )
-
-    def percent_independent(self):
-        """Calculate the percentage of trials that were independent."""
-        total = self.total_trials_new()
-        return round(((self.independent or 0) / total) * 100, 1) if total > 0 else 0
-
-    def percent_minimal_support(self):
-        """Calculate the percentage of trials with minimal support."""
-        total = self.total_trials_new()
-        return round(((self.minimal_support or 0) / total) * 100, 1) if total > 0 else 0
-
-    def percent_moderate_support(self):
-        """Calculate the percentage of trials with moderate support."""
-        total = self.total_trials_new()
-        return round(((self.moderate_support or 0) / total) * 100, 1) if total > 0 else 0
-
-    def percent_maximal_support(self):
-        """Calculate the percentage of trials with maximal support."""
-        total = self.total_trials_new()
-        return round(((self.maximal_support or 0) / total) * 100, 1) if total > 0 else 0
-
-    def percent_incorrect(self):
-        """Calculate the percentage of trials that were incorrect."""
-        total = self.total_trials_new()
-        return round(((self.incorrect or 0) / total) * 100, 1) if total > 0 else 0
 
     def percent_correct_up_to(self, support_level):
         """
@@ -328,4 +293,3 @@ class TrialLog(BaseModel):
         db.commit()
         return cls.get_by_id(db, trial_id)
 
-    # Add these methods to the Session class in models/session.py

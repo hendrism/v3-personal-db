@@ -4,7 +4,6 @@ from routes import (
     dashboard_bp,
     students_bp,
     sessions_bp,
-    schools_bp,
     api_bp,
     admin_bp,
 )
@@ -19,7 +18,6 @@ with app.app_context():
 app.register_blueprint(dashboard_bp)
 app.register_blueprint(students_bp)
 app.register_blueprint(sessions_bp)
-app.register_blueprint(schools_bp)
 app.register_blueprint(api_bp)
 app.register_blueprint(admin_bp)
 
